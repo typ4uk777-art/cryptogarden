@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Крипто-Сад</title>
+    <!-- Подключаем официальный скрипт Telegram Web App SDK -->
+    <script src="https://telegram.org"></script>
     <style>
-        /* Стиль под темную тему Телеграма */
         body {
             margin: 0;
             padding: 0;
@@ -19,113 +20,43 @@
             height: 100vh;
             overflow: hidden;
         }
-
-        /* Шапка с балансом */
-        .header {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .balance-title {
-            font-size: 14px;
-            color: #aaaaaa;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .balance-value {
-            font-size: 32px;
-            font-weight: bold;
-            margin-top: 5px;
-            color: #2f80ed; /* Синий цвет TON */
-        }
-
-        /* Контейнер для дерева */
-        .garden-container {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* 🌳 ЭФФЕКТ ВЕТРА: Плавное покачивание дерева */
+        .header { text-align: center; margin-top: 20px; }
+        .balance-title { font-size: 14px; color: #aaaaaa; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-value { font-size: 32px; font-weight: bold; margin-top: 5px; color: #2f80ed; }
+        .garden-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        
+        /* Эффект ветра */
         .crypto-tree {
             max-width: 80%;
             max-height: 45vh;
             object-fit: contain;
-            transform-origin: bottom center; /* Покачивание идет от корня/горшка */
+            transform-origin: bottom center;
             animation: gentle-breeze 4s ease-in-out infinite alternate;
         }
-
         @keyframes gentle-breeze {
-            0% {
-                transform: rotate(-1.5deg) skewX(-0.5deg);
-            }
-            100% {
-                transform: rotate(1.5deg) skewX(0.5deg);
-            }
+            0% { transform: rotate(-1.5deg) skewX(-0.5deg); }
+            100% { transform: rotate(1.5deg) skewX(0.5deg); }
         }
 
-        /* Панель с 4 кнопками управления */
-        .controls-panel {
-            width: 90%;
-            max-width: 400px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
-        .btn {
-            background-color: #242424;
-            border: 1px solid #333333;
-            color: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        .btn:active {
-            transform: scale(0.96);
-            background-color: #2d2d2d;
-        }
-
-        /* Выделяем главную коммерческую кнопку полива */
-        .btn-water {
-            background: linear-gradient(135deg, #2f80ed, #0056b3);
-            border: none;
-        }
-        .btn-water:active {
-            background: linear-gradient(135deg, #1e6bd6, #004494);
-        }
-
-        .btn-icon {
-            font-size: 20px;
-        }
+        .controls-panel { width: 90%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px; }
+        .btn { background-color: #242424; border: 1px solid #333333; color: #ffffff; padding: 15px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: background-color 0.2s, transform 0.1s; }
+        .btn:active { transform: scale(0.96); background-color: #2d2d2d; }
+        .btn-water { background: linear-gradient(135deg, #2f80ed, #0056b3); border: none; }
+        .btn-water:active { background: linear-gradient(135deg, #1e6bd6, #004494); }
+        .btn-icon { font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка приложения -->
     <div class="header">
         <div class="balance-title">Моя Заначка</div>
-        <div class="balance-value" id="balance-display">0 TON</div>
+        <div class="balance-value" id="balance-display">Загрузка...</div>
     </div>
 
-    <!-- Витрина с анимированным деревом -->
     <div class="garden-container">
-        <!-- Временно ставим картинку твоей финальной 4 стадии, переименуй свой файл в tree4.png -->
         <img src="tree4.png" alt="Денежное Дерево" class="crypto-tree" id="tree-image">
     </div>
 
-    <!-- 4 Главные кнопки интерфейса -->
     <div class="controls-panel">
         <button class="btn btn-water" onclick="waterTree()">
             <span class="btn-icon">💧</span>
@@ -133,7 +64,7 @@
         </button>
         <button class="btn" onclick="harvestTree()">
             <span class="btn-icon">🪓</span>
-            <span>Снять урожай (1%)</span>
+            <span>Снять урожай</span>
         </button>
         <button class="btn" onclick="giftTree()">
             <span class="btn-icon">🎁</span>
@@ -146,34 +77,53 @@
     </div>
 
     <script>
-        // Простая симуляция логики кликера для теста на первое время
-        let currentBalance = 0;
+        // Инициализируем Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем шторку на максимум сразу
+
+        // Проверяем, передал ли нам бот текущий баланс через URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentBalance = parseFloat(urlParams.get('balance')) || 0;
+        
+        // Комиссия садовника 1% на входе (при поливе/занесении)
+        document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
 
         function waterTree() {
-            currentBalance += 5;
-            document.getElementById('balance-display').innerText = currentBalance + " TON";
+            // Имитируем внесение 10 TON. С вычетом 1% садовнику на баланс падает 9.90 TON
+            let deposit = 10;
+            let netAmount = deposit * 0.99; 
             
-            // Логика: если баланс растет, мы в будущем будем менять картинку src на tree1.png, tree3.png и т.д.
-            // Сейчас у нас сразу красуется крутое финальное дерево
+            currentBalance += netAmount;
+            document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
+            
+            // 🚀 ОТПРАВЛЯЕМ СИГНАЛ БОТУ: Говорим PuzzleBot записать новый баланс
+            // Мы отправляем боту текст в формате JSON, чтобы он легко его прочитал
+            let dataToSend = {
+                action: "water",
+                new_balance: currentBalance
+            };
+            tg.sendData(JSON.stringify(dataToSend)); 
+            
+            // Закрываем Web App, так как Telegram требует закрытия после отправки данных через sendData
+            setTimeout(() => { tg.close(); }, 500);
         }
 
         function harvestTree() {
             if(currentBalance > 0) {
-                alert("Урожай собран! Оправлено на ваш кошелек: " + (currentBalance * 0.99).toFixed(2) + " TON (Удержана комиссия садовника 1%)");
+                // Снимаем ровно столько, сколько висит (без комиссий на выходе!)
+                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON. Садовник уже позаботился о комиссии на входе! 😉");
                 currentBalance = 0;
-                document.getElementById('balance-display').innerText = currentBalance + " TON";
+                document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
+                
+                tg.sendData(JSON.stringify({ action: "harvest", new_balance: 0 }));
+                setTimeout(() => { tg.close(); }, 500);
             } else {
-                alert("Дерево пока не принесло плодов. Полейте его!");
+                alert("Дерево пока пустое. Полейте его!");
             }
         }
 
-        function giftTree() {
-            alert("Экран создания подарка: выберите друга и введите секретное слово (в разработке)");
-        }
-
-        function openFriendGarden() {
-            alert("Переход в Сад Друзей: здесь будут отображаться деревья, которые вы подарили (в разработке)");
-        }
+        function giftTree() { alert("Экран подарка в разработке"); }
+        function openFriendGarden() { alert("Сад друзей в разработке"); }
     </script>
 </body>
 </html>
