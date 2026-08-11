@@ -76,46 +76,36 @@
         </button>
     </div>
 
-    <script>
-        // Инициализируем Telegram Web App
+   <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем шторку на максимум сразу
+        tg.expand();
 
-        // Проверяем, передал ли нам бот текущий баланс через URL
         const urlParams = new URLSearchParams(window.location.search);
         let currentBalance = parseFloat(urlParams.get('balance')) || 0;
         
-        // Комиссия садовника 1% на входе (при поливе/занесении)
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
 
         function waterTree() {
-            // Имитируем внесение 10 TON. С вычетом 1% садовнику на баланс падает 9.90 TON
             let deposit = 10;
-            let netAmount = deposit * 0.99; 
+            let netAmount = deposit * 0.99; // 1% садовнику на входе
             
             currentBalance += netAmount;
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
             
-            // 🚀 ОТПРАВЛЯЕМ СИГНАЛ БОТУ: Говорим PuzzleBot записать новый баланс
-            // Мы отправляем боту текст в формате JSON, чтобы он легко его прочитал
-            let dataToSend = {
-                action: "water",
-                new_balance: currentBalance
-            };
-            tg.sendData(JSON.stringify(dataToSend)); 
+            // 🚀 ОТПРАВЛЯЕМ БОТУ ПРОСТОЕ ЧИСЛО БЕЗ ЛИШНЕГО ТЕКСТА
+            tg.sendData(currentBalance.toFixed(2)); 
             
-            // Закрываем Web App, так как Telegram требует закрытия после отправки данных через sendData
             setTimeout(() => { tg.close(); }, 500);
         }
 
         function harvestTree() {
             if(currentBalance > 0) {
-                // Снимаем ровно столько, сколько висит (без комиссий на выходе!)
-                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON. Садовник уже позаботился о комиссии на входе! 😉");
+                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON.");
                 currentBalance = 0;
                 document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
                 
-                tg.sendData(JSON.stringify({ action: "harvest", new_balance: 0 }));
+                // При обнулении шторка шлет боту ноль
+                tg.sendData("0");
                 setTimeout(() => { tg.close(); }, 500);
             } else {
                 alert("Дерево пока пустое. Полейте его!");
@@ -123,7 +113,5 @@
         }
 
         function giftTree() { alert("Экран подарка в разработке"); }
-        function openFriendGarden() { alert("Сад друзей в разработке"); }
+        function openFriendGarden() { alert("Сад друзей in dev"); }
     </script>
-</body>
-</html>
