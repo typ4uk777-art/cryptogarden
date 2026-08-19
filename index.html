@@ -4,246 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Крипто-Сад</title>
-    <script src="https://telegram.org"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #181818;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 100vh;
-            overflow: hidden;
-        }
+        body { margin: 0; padding: 0; background:#181818; color:#fff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh; overflow: hidden; }
         .header { text-align: center; margin-top: 20px; width: 100%; }
-        .balance-title { font-size: 14px; color: #aaaaaa; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-title { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
         .balance-value { font-size: 32px; font-weight: bold; margin-top: 5px; color: #2f80ed; }
-        
-        .heir-badge {
-            background-color: #242424;
-            border: 1px dashed #ffc107;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            margin-top: 8px;
-            color: #ffc107;
-            cursor: pointer;
-        }
-
-        .garden-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
-        
-        .crypto-tree {
-            max-width: 80%;
-            max-height: 42vh;
-            object-fit: contain;
-            transform-origin: bottom center;
-            animation: gentle-breeze 4s ease-in-out infinite alternate;
-        }
-        @keyframes gentle-breeze {
-            0% { transform: rotate(-1.5deg) skewX(-0.5deg); }
-            100% { transform: rotate(1.5deg) skewX(0.5deg); }
-        }
-
-        .controls-panel { width: 90%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
-        .btn { background-color: #242424; border: 1px solid #333333; color: #ffffff; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: background-color 0.2s, transform 0.1s; }
-        .btn:active { transform: scale(0.96); background-color: #2d2d2d; }
+        .heir-badge { background: #242424; border: 1px dashed #ffc107; padding: 6px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; gap: 5px; margin-top: 8px; color: #ffc107; cursor: pointer; }
+        .garden-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; pointer-events: none; }
+        .crypto-tree { max-width: 80%; max-height: 42vh; object-fit: contain; transform-origin: bottom center; animation: gentle-breeze 4s ease-in-out infinite alternate; pointer-events: auto; }
+        @keyframes gentle-breeze { 0% { transform: rotate(-1.5deg); } 100% { transform: rotate(1.5deg); } }
+        .controls-panel { width: 90%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; position: relative; z-index: 10; }
+        .btn { background: #242424; border: 1px solid #333; color: #fff; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+        .btn:active { transform: scale(0.96); background: #2d2d2d; }
         .btn-water { background: linear-gradient(135deg, #2f80ed, #0056b3); border: none; grid-column: span 2; padding: 16px; font-size: 15px; }
-        .btn-water:active { background: linear-gradient(135deg, #1e6bd6, #004494); }
-        .btn-icon { font-size: 18px; }
     </style>
 </head>
 <body>
-
     <div class="header">
-        <div class="balance-title" id="tree-title">Заначка — Обычное дерево</div>
+        <div class="balance-title" id="tree-title">Заначка</div>
         <div class="balance-value" id="balance-display">0.00</div>
         <div id="heir-container"></div>
     </div>
-
-    <div class="garden-container">
-        <img src="tree1.png" alt="Денежное Дерево" class="crypto-tree" id="tree-image">
-    </div>
-
+    <div class="garden-container"><img src="tree1.png" alt="Дерево" class="crypto-tree" id="tree-image"></div>
     <div class="controls-panel">
-        <button class="btn btn-water" id="btn-water">
-            <span class="btn-icon">💧</span>
-            <span>Полить заначку</span>
-        </button>
-        <button class="btn" id="btn-harvest">
-            <span class="btn-icon">🪓</span>
-            <span>Снять урожай</span>
-        </button>
-        <button class="btn" id="btn-style">
-            <span class="btn-icon">🎭</span>
-            <span>Сменить скин</span>
-        </button>
-        <button class="btn" id="btn-inherit">
-            <span class="btn-icon">📜</span>
-            <span id="inherit-btn-text">Сделать наследством</span>
-        </button>
-        <button class="btn" id="btn-friends">
-            <span class="btn-icon">🏡</span>
-            <span>Мой Сад</span>
-        </button>
+        <button class="btn btn-water" id="btn-water">💧 Полить заначку</button>
+        <button class="btn" id="btn-harvest">🪓 Снять урожай</button>
+        <button class="btn" id="btn-style">🎭 Сменить скин</button>
+        <button class="btn" id="btn-inherit"><span id="inherit-btn-text">📜 Сделать наследством</span></button>
+        <button class="btn" id="btn-friends">🏡 Мой Сад</button>
     </div>
-
+    <script src="https://telegram.org"></script>
     <script>
-        const tg = window.Telegram.WebApp;
-        if (tg) { try { tg.expand(); } catch(e) {} }
-
-        // Безопасное чтение данных
-        let currentBalance = 0;
-        try {
-            let savedBalance = localStorage.getItem('crypto_garden_balance');
-            if (savedBalance) { currentBalance = parseFloat(savedBalance); }
-        } catch(e) { currentBalance = 0; }
-        if (isNaN(currentBalance)) { currentBalance = 0; }
-        
+        let tg = window.Telegram?.WebApp; if(tg) { try{tg.expand()}catch(e){} }
+        let currentBalance = parseFloat(localStorage.getItem('crypto_garden_balance') || 0);
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
         let treeStyle = localStorage.getItem('crypto_garden_style') || 'classic';
         let isInheritance = localStorage.getItem('crypto_garden_is_inherit') === 'true';
         let heirContact = localStorage.getItem('crypto_garden_heir') || '';
 
-        // Первое обновление интерфейса
-        updateUI();
-
         function updateUI() {
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-            updateTitle();
-            updateHeirBadge();
-            updateTreeVisual();
-        }
-
-        function updateTitle() {
-            let styleNames = { 
-                'classic': 'Обычное дерево', 
-                'cyberpunk': 'Киберпанк 🤖', 
-                'christmas': 'Рождественское 🎄', 
-                'palm': 'Пальма 🌴',
-                'gold': 'Золотое (Спасибо! ❤️)' 
-            };
-            let prefix = isInheritance ? "📜 НАБЛЮДАЕМОЕ НАСЛЕДСТВО — " : "Заначка — ";
-            document.getElementById('tree-title').innerText = prefix + (styleNames[treeStyle] || 'Обычное дерево');
-            document.getElementById('inherit-btn-text').innerText = isInheritance ? "Убрать наследство" : "Сделать наследством";
-        }
-
-        function updateHeirBadge() {
-            const container = document.getElementById('heir-container');
-            if (isInheritance && heirContact) {
-                container.innerHTML = `<div class="heir-badge" id="heir-badge-click">⭐ Наследник: ${heirContact}</div>`;
-                document.getElementById('heir-badge-click').addEventListener('click', setupHeir);
-            } else if (isInheritance) {
-                container.innerHTML = `<div class="heir-badge" id="heir-badge-click" style="border-color: #ff4d4d; color: #ff4d4d;">⚠️ Нажмите, чтобы указать близкого</div>`;
-                document.getElementById('heir-badge-click').addEventListener('click', setupHeir);
-            } else {
-                container.innerHTML = '';
-            }
-        }
-
-        function updateTreeVisual() {
-            const treeImg = document.getElementById('tree-image');
-            if (!treeImg) return;
+            let styles = {'classic':'Обычное','cyberpunk':'Киберпанк 🤖','christmas':'Рождественское 🎄','palm':'Пальма 🌴','gold':'Золотое ❤️'};
+            document.getElementById('tree-title').innerText = (isInheritance ? "📜 НАСЛЕДСТВО — " : "Заначка — ") + (styles[treeStyle] || 'Обычное');
+            document.getElementById('inherit-btn-text').innerText = isInheritance ? "📜 Обычная заначка" : "📜 Сделать наследством";
             
-            if (treeStatus === 'harvested') {
-                treeImg.src = "tree4.png"; 
-                return;
-            }
+            let hc = document.getElementById('heir-container');
+            if (isInheritance) {
+                hc.innerHTML = `<div class="heir-badge" id="heir-click">${heirContact ? '⭐ Наследник: '+heirContact : '⚠️ Указать близкого'}</div>`;
+                document.getElementById('heir-click').addEventListener('click', () => {
+                    let c = prompt("Telegram @username близкого:"); if(c) { heirContact = c; localStorage.setItem('crypto_garden_heir', c); updateUI(); }
+                });
+            } else { hc.innerHTML = ''; }
 
             let suffix = treeStyle === 'classic' ? '' : '_' + treeStyle;
-            let stage = 1; 
-            
-            if (currentBalance > 0 && currentBalance <= 50) {
-                stage = 1; 
-            } else if (currentBalance > 50 && currentBalance <= 200) {
-                stage = 2; 
-            } else if (currentBalance > 200) {
-                stage = 3; 
-            }
-
-            treeImg.src = "tree" + stage + suffix + ".png";
+            let stage = 1; if(currentBalance > 50 && currentBalance <= 200) stage = 2; else if(currentBalance > 200) stage = 3;
+            document.getElementById('tree-image').src = treeStatus === 'harvested' ? "tree4.png" : "tree" + stage + suffix + ".png";
         }
 
-        function changeTreeStyle() {
-            let styles = ['classic', 'cyberpunk', 'christmas', 'palm', 'gold'];
-            let currentIndex = styles.indexOf(treeStyle);
-            let nextIndex = (currentIndex + 1) % styles.length;
-            treeStyle = styles[nextIndex];
-            
-            localStorage.setItem('crypto_garden_style', treeStyle);
-            updateUI();
-        }
-
-        function toggleInheritance() {
-            isInheritance = !isInheritance;
-            localStorage.setItem('crypto_garden_is_inherit', isInheritance);
-            if (isInheritance && !heirContact) {
-                setupHeir();
-            } else {
-                updateUI();
-            }
-        }
-
-        function setupHeir() {
-            let contact = prompt("Укажите Telegram @username или имя близкого человека:");
-            if (contact !== null && contact !== "") {
-                heirContact = contact;
-                localStorage.setItem('crypto_garden_heir', heirContact);
-            }
-            updateUI();
-        }
-
-        function waterTree() {
-            if (treeStatus === 'harvested') {
-                treeStatus = 'growing';
-                currentBalance = 0;
-            }
-            
-            let deposit = 10;
-            let feePercent = (treeStyle === 'gold') ? 0.02 : 0.01;
-            let netAmount = deposit * (1 - feePercent);
-            
-            currentBalance += netAmount;
-            treeStatus = 'growing'; 
-            
+        document.getElementById('btn-water').addEventListener('click', () => {
+            if(treeStatus === 'harvested') { treeStatus = 'growing'; currentBalance = 0; }
+            currentBalance += 10 * (1 - (treeStyle === 'gold' ? 0.02 : 0.01));
             localStorage.setItem('crypto_garden_balance', currentBalance.toString());
             localStorage.setItem('crypto_garden_status', treeStatus);
-            
             updateUI();
-        }
+        });
 
-        function harvestTree() {
-            if (currentBalance === 0) {
-                alert("Дерево пока пустое. Полейте его!");
-                return;
-            }
-
-            if (isInheritance && heirContact) {
-                let confirmHeir = confirm(`Это Наследство. Запрос отправлен контакту ${heirContact}. Наследник подтверждает снятие?`);
-                if (!confirmHeir) {
-                    alert("Снятие отменено.");
-                    return;
-                }
-            }
-
-            let password = prompt("Введите секретное кодовое слово:");
-            if (password) {
-                alert("Доступ разрешен! Вы забрали: " + currentBalance.toFixed(2));
-                currentBalance = 0;
-                treeStatus = 'harvested';
-                
-                localStorage.setItem('crypto_garden_balance', '0');
-                localStorage.setItem('crypto_garden_status', treeStatus);
-                
+        document.getElementById('btn-harvest').addEventListener('click', () => {
+            if(currentBalance === 0) return alert("Дерево пустое!");
+            if(isInheritance && heirContact && !confirm(`Запрос отправлен ${heirContact}. Наследник подтверждает?`)) return;
+            if(prompt("Введите кодовое слово:")) {
+                alert("Урожай собран: " + currentBalance.toFixed(2)); currentBalance = 0; treeStatus = 'harvested';
+                localStorage.setItem('crypto_garden_balance', '0'); localStorage.setItem('crypto_garden_status', treeStatus);
                 updateUI();
             }
-        }
+        });
 
-        // Железобетонная привязка кликов через Event Listeners
-        document.getElementById('btn-water').addEventListener('click', waterTree);
+        document.getElementById('btn-style').addEventListener('click', () => {
+            let s = ['classic', 'cyberpunk', 'christmas', 'palm', 'gold'];
+            treeStyle = s[(s.indexOf(treeStyle) + 1) % s.length];
+            localStorage.setItem('crypto_garden_style', treeStyle); updateUI();
+        });
+
+        document.getElementById('btn-inherit').addEventListener('click', () => {
+            isInheritance = !isInheritance; localStorage.setItem('crypto_garden_is_inherit', isInheritance);
+            if(isInheritance && !heirContact) { let c = prompt("Telegram @username близкого:"); if(c) { heirContact = c; localStorage.setItem('crypto_garden_heir', c); } }
+            updateUI();
+        });
+
+        document.getElementById('btn-friends').addEventListener('click', () => alert("Сад в разработке"));
+        updateUI();
+    </script>
+</body>
+</html>
