@@ -78,15 +78,15 @@
         const tg = window.Telegram.WebApp;
         if (tg) { try { tg.expand(); } catch(e) {} }
 
-        // 🧠 Полностью автономное чтение баланса из памяти устройства (без тегов конструкторов)
+        // Чтение баланса из памяти устройства
         let savedBalance = localStorage.getItem('crypto_garden_balance');
         let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
+        if (isNaN(currentBalance)) { currentBalance = 0; }
         
-        // Чтение статуса (по умолчанию растет)
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
 
         // Выводим баланс на экран
-        document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
 
         function updateTreeVisual(balance, status) {
             const treeImg = document.getElementById('tree-image');
@@ -115,10 +115,12 @@
             let netAmount = deposit * 0.99; // 1% комиссия садовника
             
             currentBalance += netAmount;
-            document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            // Мгновенно обновляем интерфейс
+            document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
             updateTreeVisual(currentBalance, treeStatus);
             
-            // 💾 Сохраняем прямо в память телефона!
+            // Сохраняем баланс в память телефона
             localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
         }
 
@@ -132,7 +134,7 @@
             if (password) {
                 alert("Урожай собран! Вы забираете: " + currentBalance.toFixed(2));
                 currentBalance = 0;
-                document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
                 localStorage.setItem('crypto_garden_balance', '0.00');
                 updateTreeVisual(currentBalance, treeStatus);
             }
