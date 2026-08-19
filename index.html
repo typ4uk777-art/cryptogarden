@@ -23,7 +23,6 @@
         .balance-title { font-size: 14px; color: #aaaaaa; text-transform: uppercase; letter-spacing: 1px; }
         .balance-value { font-size: 32px; font-weight: bold; margin-top: 5px; color: #2f80ed; }
         
-        /* Плашка наследника */
         .heir-badge {
             background-color: #242424;
             border: 1px dashed #ffc107;
@@ -35,6 +34,7 @@
             gap: 5px;
             margin-top: 8px;
             color: #ffc107;
+            cursor: pointer;
         }
 
         .garden-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
@@ -47,7 +47,7 @@
             animation: gentle-breeze 4s ease-in-out infinite alternate;
         }
         @keyframes gentle-breeze {
-            0% { transform: rotate(-1.5deg) skewX(-0.5deg); }
+            0 { transform: rotate(-1.5deg) skewX(-0.5deg); }
             100% { transform: rotate(1.5deg) skewX(0.5deg); }
         }
 
@@ -98,23 +98,30 @@
         const tg = window.Telegram.WebApp;
         if (tg) { try { tg.expand(); } catch(e) {} }
 
-        // Загрузка состояния
-        let savedBalance = localStorage.getItem('crypto_garden_balance');
-        let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
+        // Безопасная инициализация баланса
+        let currentBalance = 0;
+        try {
+            let savedBalance = localStorage.getItem('crypto_garden_balance');
+            if (savedBalance) {
+                currentBalance = parseFloat(savedBalance);
+            }
+        } catch(e) { currentBalance = 0; }
         if (isNaN(currentBalance)) { currentBalance = 0; }
         
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
         let treeStyle = localStorage.getItem('crypto_garden_style') || 'classic';
-        
-        // Переменные для механики наследства
         let isInheritance = localStorage.getItem('crypto_garden_is_inherit') === 'true';
         let heirContact = localStorage.getItem('crypto_garden_heir') || '';
 
-        // Инициализация интерфейса
-        document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-        updateTitle();
-        updateHeirBadge();
-        updateTreeVisual(currentBalance, treeStatus, treeStyle);
+        // Первое обновление экрана
+        updateUI();
+
+        function updateUI() {
+            document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
+            updateTitle();
+            updateHeirBadge();
+            updateTreeVisual();
+        }
 
         function updateTitle() {
             let styleNames = { 
@@ -132,7 +139,7 @@
         function updateHeirBadge() {
             const container = document.getElementById('heir-container');
             if (isInheritance && heirContact) {
-                container.innerHTML = `<div class="heir-badge">⭐ Наследник: ${heirContact}</div>`;
+                container.innerHTML = `<div class="heir-badge" onclick="setupHeir()">⭐ Наследник: ${heirContact}</div>`;
             } else if (isInheritance) {
                 container.innerHTML = `<div class="heir-badge" style="border-color: #ff4d4d; color: #ff4d4d;" onclick="setupHeir()">⚠️ Нажмите, чтобы указать близкого</div>`;
             } else {
@@ -140,23 +147,23 @@
             }
         }
 
-        function updateTreeVisual(balance, status, style) {
+        function updateTreeVisual() {
             const treeImg = document.getElementById('tree-image');
             if (!treeImg) return;
             
-            if (status === 'harvested') {
+            if (treeStatus === 'harvested') {
                 treeImg.src = "tree4.png"; 
                 return;
             }
 
-            let suffix = style === 'classic' ? '' : '_' + style;
-            
+            let suffix = treeStyle === 'classic' ? '' : '_' + treeStyle;
             let stage = 1; 
-            if (balance > 0 && balance <= 50) {
+            
+            if (currentBalance > 0 && currentBalance <= 50) {
                 stage = 1; 
-            } else if (balance > 50 && balance <= 200) {
+            } else if (currentBalance > 50 && currentBalance <= 200) {
                 stage = 2; 
-            } else if (balance > 200) {
+            } else if (currentBalance > 200) {
                 stage = 3; 
             }
 
@@ -170,37 +177,33 @@
             treeStyle = styles[nextIndex];
             
             localStorage.setItem('crypto_garden_style', treeStyle);
-            updateTitle();
-            updateTreeVisual(currentBalance, treeStatus, treeStyle);
+            updateUI();
         }
 
-        // Включение/выключение режима наследства
         function toggleInheritance() {
             isInheritance = !isInheritance;
             localStorage.setItem('crypto_garden_is_inherit', isInheritance);
-            
             if (isInheritance && !heirContact) {
                 setupHeir();
+            } else {
+                updateUI();
             }
-            
-            updateTitle();
-            updateHeirBadge();
         }
 
-        // Привязка близкого человека
         function setupHeir() {
-            let contact = prompt("Укажите Telegram @username или имя близкого человека для подтверждения:");
-            if (contact) {
+            let contact = prompt("Укажите Telegram @username или имя близкого человека:");
+            if (contact !== null && contact !== "") {
                 heirContact = contact;
                 localStorage.setItem('crypto_garden_heir', heirContact);
             }
-            updateHeirBadge();
+            updateUI();
         }
 
         function waterTree() {
             if (treeStatus === 'harvested') {
-                alert("Урожай собран. Посадите новое дерево!");
-                return;
+                // Если дерево было срублено, первый полив сажает новое
+                treeStatus = 'growing';
+                currentBalance = 0;
             }
             
             let deposit = 10;
@@ -210,11 +213,11 @@
             currentBalance += netAmount;
             treeStatus = 'growing'; 
             
-            document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-            localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
+            // Жесткое сохранение в память чисел, а не строк
+            localStorage.setItem('crypto_garden_balance', currentBalance.toString());
             localStorage.setItem('crypto_garden_status', treeStatus);
             
-            updateTreeVisual(currentBalance, treeStatus, treeStyle);
+            updateUI();
         }
 
         function harvestTree() {
@@ -223,19 +226,28 @@
                 return;
             }
 
-            // Если включен режим наследства — добавляем двухфакторную проверку наследника
             if (isInheritance && heirContact) {
-                let confirmHeir = confirm(`Это дерево является Наследством. Будет отправлен запрос контакту ${heirContact}. Наследник подтверждает снятие?`);
+                let confirmHeir = confirm(`Это Наследство. Запрос отправлен контакту ${heirContact}. Наследник подтверждает снятие?`);
                 if (!confirmHeir) {
-                    alert("Снятие отменено. Наследник не выдал подтверждение.");
+                    alert("Снятие отменено.");
                     return;
                 }
             }
 
-            let password = prompt("Введите секретное кодовое слово из завещания:");
+            let password = prompt("Введите секретное кодовое слово:");
             if (password) {
-                alert("Доступ разрешен! Наследство выдано. Сумма: " + currentBalance.toFixed(2));
+                alert("Доступ разрешен! Вы забрали: " + currentBalance.toFixed(2));
                 currentBalance = 0;
                 treeStatus = 'harvested';
                 
-                document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
+                localStorage.setItem('crypto_garden_balance', '0');
+                localStorage.setItem('crypto_garden_status', treeStatus);
+                
+                updateUI();
+            }
+        }
+
+        function openFriendGarden() { alert("Сад в разработке"); }
+    </script>
+</body>
+</html>
