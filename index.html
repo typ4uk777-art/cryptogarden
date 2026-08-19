@@ -76,13 +76,22 @@
         </button>
     </div>
 
-   <script>
+    <script>
+        // Инициализируем Telegram Web App
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.expand(); // Разворачиваем шторку на максимум сразу
 
+        // «Всеядное» чтение баланса из ссылки (ловит и Balance, и balance)
         const urlParams = new URLSearchParams(window.location.search);
-        let currentBalance = parseFloat(urlParams.get('Balance')) || 0;
+        let rawBalance = urlParams.get('Balance') || urlParams.get('balance');
+        let currentBalance = parseFloat(rawBalance);
+
+        // Железобетонная защита: если в ссылке пустота, ставим чистый ноль
+        if (isNaN(currentBalance)) {
+            currentBalance = 0;
+        }
         
+        // Выводим баланс на экран
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
 
         function waterTree() {
@@ -92,7 +101,7 @@
             currentBalance += netAmount;
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
             
-            // 🚀 ОТПРАВЛЯЕМ БОТУ ПРОСТОЕ ЧИСЛО БЕЗ ЛИШНЕГО ТЕКСТА
+            // Отправляем боту простое число
             tg.sendData(currentBalance.toFixed(2)); 
             
             setTimeout(() => { tg.close(); }, 500);
@@ -100,11 +109,10 @@
 
         function harvestTree() {
             if(currentBalance > 0) {
-                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON.");
+                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON. Садовник уже позаботился о комиссии на входе! 😉");
                 currentBalance = 0;
                 document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
                 
-                // При обнулении шторка шлет боту ноль
                 tg.sendData("0");
                 setTimeout(() => { tg.close(); }, 500);
             } else {
@@ -113,5 +121,7 @@
         }
 
         function giftTree() { alert("Экран подарка в разработке"); }
-        function openFriendGarden() { alert("Сад друзей in dev"); }
+        function openFriendGarden() { alert("Сад друзей в разработке"); }
     </script>
+</body>
+</html>
