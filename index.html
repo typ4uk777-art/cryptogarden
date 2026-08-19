@@ -81,7 +81,7 @@
         tg.expand();
 
         const urlParams = new URLSearchParams(window.location.search);
-        let currentBalance = parseFloat(urlParams.get('balance')) || 0;
+        let currentBalance = parseFloat(urlParams.get('Balance')) || 0;
         
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
 
