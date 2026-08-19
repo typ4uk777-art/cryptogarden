@@ -47,7 +47,7 @@
 <body>
 
     <div class="header">
-        <div class="balance-title" id="tree-title">Мой Сад — Заначка</div>
+        <div class="balance-title" id="tree-title">Заначка — Обычное дерево</div>
         <div class="balance-value" id="balance-display">0.00</div>
     </div>
 
@@ -64,9 +64,9 @@
             <span class="btn-icon">🪓</span>
             <span>Снять урожай</span>
         </button>
-        <button class="btn" onclick="giftTree()">
-            <span class="btn-icon">🎁</span>
-            <span>Подарить дерево</span>
+        <button class="btn" onclick="changeTreeStyle()">
+            <span class="btn-icon">🎭</span>
+            <span>Сменить скин</span>
         </button>
         <button class="btn" onclick="openFriendGarden()">
             <span class="btn-icon">🏡</span>
@@ -75,45 +75,65 @@
     </div>
 
     <script>
-        // 1. СНАЧАЛА ОБЪЯВЛЯЕМ ВСЕ ПЕРЕМЕННЫЕ (чтобы не было ошибок инициализации)
+        const tg = window.Telegram.WebApp;
+        if (tg) { try { tg.expand(); } catch(e) {} }
+
+        // Память устройства
         let savedBalance = localStorage.getItem('crypto_garden_balance');
         let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
         if (isNaN(currentBalance)) { currentBalance = 0; }
         
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
+        
+        // 🎭 Считываем стиль дерева (по умолчанию classic. Еще могут быть: cyberpunk, christmas, palm)
+        let treeStyle = localStorage.getItem('crypto_garden_style') || 'classic';
 
-        // 2. БЕЗОПАСНО подключаем Telegram WebApp SDK
-        let tg = null;
-        if (window.Telegram && window.Telegram.WebApp) {
-            tg = window.Telegram.WebApp;
-            try { tg.expand(); } catch(e) { console.log(e); }
+        // Выводим баланс
+        document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
+        updateTitle();
+
+        function updateTitle() {
+            let styleNames = { 'classic': 'Обычное', 'cyberpunk': 'Киберпанк 🤖', 'christmas': 'Рождественское 🎄', 'palm': 'Пальма 🌴' };
+            document.getElementById('tree-title').innerText = "Заначка — " + (styleNames[treeStyle] || 'Обычное');
         }
 
-        // 3. Выводим стартовый баланс на экран
-        document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-
-        // 4. Функция переключения графики стадий
-        function updateTreeVisual(balance, status) {
+        // 🌳 Улучшенная функция смены графики под скины!
+        function updateTreeVisual(balance, status, style) {
             const treeImg = document.getElementById('tree-image');
             if (!treeImg) return;
             
+            // Первая стадия (семечка) ВСЕГДА tree1.png для всех стилей
+            if (balance === 0 && status === 'growing') {
+                treeImg.src = "tree1.png";
+                return;
+            }
+
+            // Суффикс для скинов (если стиль классический — суффикса нет)
+            let suffix = style === 'classic' ? '' : '_' + style;
+
             if (status === 'closed') {
-                treeImg.src = "tree3.png"; 
+                treeImg.src = "tree3" + suffix + ".png"; // Залочено (Цветущее)
             } else if (status === 'harvested') {
-                treeImg.src = "tree4.png"; 
+                treeImg.src = "tree4" + suffix + ".png"; // Снятие урожая
             } else {
-                if (balance === 0) {
-                    treeImg.src = "tree1.png"; 
-                } else {
-                    treeImg.src = "tree2.png"; 
-                }
+                treeImg.src = "tree2" + suffix + ".png"; // Растущий кустик со скином!
             }
         }
 
-        // Запускаем визуал дерева сразу при загрузке
-        updateTreeVisual(currentBalance, treeStatus);
+        updateTreeVisual(currentBalance, treeStatus, treeStyle);
 
-        // 5. Логика кнопок
+        // Функция быстрой смены скина для теста по кругу
+        function changeTreeStyle() {
+            let styles = ['classic', 'cyberpunk', 'christmas', 'palm'];
+            let currentIndex = styles.indexOf(treeStyle);
+            let nextIndex = (currentIndex + 1) % styles.length;
+            treeStyle = styles[nextIndex];
+            
+            localStorage.setItem('crypto_garden_style', treeStyle);
+            updateTitle();
+            updateTreeVisual(currentBalance, treeStatus, treeStyle);
+        }
+
         function waterTree() {
             if (treeStatus === 'closed' || treeStatus === 'harvested') {
                 alert("Это дерево зафиксировано. Пополнить его нельзя!");
@@ -121,13 +141,11 @@
             }
             
             let deposit = 10;
-            let netAmount = deposit * 0.99; // 1% комиссия садовника
-            
+            let netAmount = deposit * 0.99; // 1% комиссия
             currentBalance += netAmount;
             
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-            updateTreeVisual(currentBalance, treeStatus);
-            
+            updateTreeVisual(currentBalance, treeStatus, treeStyle);
             localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
         }
 
@@ -136,19 +154,17 @@
                 alert("Дерево пока пустое. Полейте его!");
                 return;
             }
-            
             let password = prompt("Введите секретное слово для обналички заначки:");
             if (password) {
                 alert("Урожай собран! Вы забираете: " + currentBalance.toFixed(2));
                 currentBalance = 0;
                 document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
                 localStorage.setItem('crypto_garden_balance', '0.00');
-                updateTreeVisual(currentBalance, treeStatus);
+                updateTreeVisual(currentBalance, treeStatus, treeStyle);
             }
         }
 
-        function giftTree() { alert("Экран создания подарка в разработке"); }
-        function openFriendGarden() { alert("Сад друзей в разработке"); }
+        function openFriendGarden() { alert("Сад в разработке"); }
     </script>
 </body>
 </html>
