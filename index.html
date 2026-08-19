@@ -77,44 +77,58 @@
     </div>
 
     <script>
-        // Инициализируем Telegram Web App
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем шторку на максимум сразу
+        // Безопасная инициализация Telegram SDK
+        let tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            try {
+                tg.expand(); // Разворачиваем шторку только если мы внутри ТГ
+            } catch(e) { console.log(e); }
+        }
 
-        // «Всеядное» чтение баланса из ссылки (ловит и Balance, и balance)
+        // «Всеядное» чтение баланса из ссылки
         const urlParams = new URLSearchParams(window.location.search);
         let rawBalance = urlParams.get('Balance') || urlParams.get('balance');
         let currentBalance = parseFloat(rawBalance);
 
-        // Железобетонная защита: если в ссылке пустота, ставим чистый ноль
+        // Если в ссылке пустота или зашли с ПК — принудительно ставим 0
         if (isNaN(currentBalance)) {
             currentBalance = 0;
         }
         
-        // Выводим баланс на экран
+        // Моментально убираем надпись «Загрузка...» и выводим цифры
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
 
         function waterTree() {
             let deposit = 10;
-            let netAmount = deposit * 0.99; // 1% садовнику на входе
+            let netAmount = deposit * 0.99; // 1% комиссия
             
             currentBalance += netAmount;
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
             
-            // Отправляем боту простое число
-            tg.sendData(currentBalance.toFixed(2)); 
-            
-            setTimeout(() => { tg.close(); }, 500);
+            // Отправляем данные боту, только если мы внутри Телеграма
+            if (tg) {
+                try {
+                    tg.sendData(currentBalance.toFixed(2));
+                    setTimeout(() => { tg.close(); }, 500);
+                } catch(e) { console.log(e); }
+            } else {
+                alert("Имитация полива в браузере! Новый баланс: " + currentBalance.toFixed(2) + " TON");
+            }
         }
 
         function harvestTree() {
             if(currentBalance > 0) {
-                alert("Урожай собран! Вы забираете ровно: " + currentBalance.toFixed(2) + " TON. Садовник уже позаботился о комиссии на входе! 😉");
+                alert("Урожай собран! Вы забираете: " + currentBalance.toFixed(2) + " TON.");
                 currentBalance = 0;
                 document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " TON";
                 
-                tg.sendData("0");
-                setTimeout(() => { tg.close(); }, 500);
+                if (tg) {
+                    try {
+                        tg.sendData("0");
+                        setTimeout(() => { tg.close(); }, 500);
+                    } catch(e) { console.log(e); }
+                }
             } else {
                 alert("Дерево пока пустое. Полейте его!");
             }
