@@ -75,21 +75,28 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        if (tg) { try { tg.expand(); } catch(e) {} }
-
-        // Чтение баланса из памяти устройства
+        // 1. СНАЧАЛА ОБЪЯВЛЯЕМ ВСЕ ПЕРЕМЕННЫЕ (чтобы не было ошибок инициализации)
         let savedBalance = localStorage.getItem('crypto_garden_balance');
         let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
         if (isNaN(currentBalance)) { currentBalance = 0; }
         
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
 
-        // Выводим баланс на экран
+        // 2. БЕЗОПАСНО подключаем Telegram WebApp SDK
+        let tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            try { tg.expand(); } catch(e) { console.log(e); }
+        }
+
+        // 3. Выводим стартовый баланс на экран
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
 
+        // 4. Функция переключения графики стадий
         function updateTreeVisual(balance, status) {
             const treeImg = document.getElementById('tree-image');
+            if (!treeImg) return;
+            
             if (status === 'closed') {
                 treeImg.src = "tree3.png"; 
             } else if (status === 'harvested') {
@@ -103,8 +110,10 @@
             }
         }
 
+        // Запускаем визуал дерева сразу при загрузке
         updateTreeVisual(currentBalance, treeStatus);
 
+        // 5. Логика кнопок
         function waterTree() {
             if (treeStatus === 'closed' || treeStatus === 'harvested') {
                 alert("Это дерево зафиксировано. Пополнить его нельзя!");
@@ -116,11 +125,9 @@
             
             currentBalance += netAmount;
             
-            // Мгновенно обновляем интерфейс
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
             updateTreeVisual(currentBalance, treeStatus);
             
-            // Сохраняем баланс в память телефона
             localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
         }
 
