@@ -47,7 +47,7 @@
             animation: gentle-breeze 4s ease-in-out infinite alternate;
         }
         @keyframes gentle-breeze {
-            0 { transform: rotate(-1.5deg) skewX(-0.5deg); }
+            0% { transform: rotate(-1.5deg) skewX(-0.5deg); }
             100% { transform: rotate(1.5deg) skewX(0.5deg); }
         }
 
@@ -72,23 +72,23 @@
     </div>
 
     <div class="controls-panel">
-        <button class="btn btn-water" onclick="waterTree()">
+        <button class="btn btn-water" id="btn-water">
             <span class="btn-icon">💧</span>
             <span>Полить заначку</span>
         </button>
-        <button class="btn" onclick="harvestTree()">
+        <button class="btn" id="btn-harvest">
             <span class="btn-icon">🪓</span>
             <span>Снять урожай</span>
         </button>
-        <button class="btn" onclick="changeTreeStyle()">
+        <button class="btn" id="btn-style">
             <span class="btn-icon">🎭</span>
             <span>Сменить скин</span>
         </button>
-        <button class="btn" onclick="toggleInheritance()">
+        <button class="btn" id="btn-inherit">
             <span class="btn-icon">📜</span>
             <span id="inherit-btn-text">Сделать наследством</span>
         </button>
-        <button class="btn" onclick="openFriendGarden()">
+        <button class="btn" id="btn-friends">
             <span class="btn-icon">🏡</span>
             <span>Мой Сад</span>
         </button>
@@ -98,13 +98,11 @@
         const tg = window.Telegram.WebApp;
         if (tg) { try { tg.expand(); } catch(e) {} }
 
-        // Безопасная инициализация баланса
+        // Безопасное чтение данных
         let currentBalance = 0;
         try {
             let savedBalance = localStorage.getItem('crypto_garden_balance');
-            if (savedBalance) {
-                currentBalance = parseFloat(savedBalance);
-            }
+            if (savedBalance) { currentBalance = parseFloat(savedBalance); }
         } catch(e) { currentBalance = 0; }
         if (isNaN(currentBalance)) { currentBalance = 0; }
         
@@ -113,7 +111,7 @@
         let isInheritance = localStorage.getItem('crypto_garden_is_inherit') === 'true';
         let heirContact = localStorage.getItem('crypto_garden_heir') || '';
 
-        // Первое обновление экрана
+        // Первое обновление интерфейса
         updateUI();
 
         function updateUI() {
@@ -139,9 +137,11 @@
         function updateHeirBadge() {
             const container = document.getElementById('heir-container');
             if (isInheritance && heirContact) {
-                container.innerHTML = `<div class="heir-badge" onclick="setupHeir()">⭐ Наследник: ${heirContact}</div>`;
+                container.innerHTML = `<div class="heir-badge" id="heir-badge-click">⭐ Наследник: ${heirContact}</div>`;
+                document.getElementById('heir-badge-click').addEventListener('click', setupHeir);
             } else if (isInheritance) {
-                container.innerHTML = `<div class="heir-badge" style="border-color: #ff4d4d; color: #ff4d4d;" onclick="setupHeir()">⚠️ Нажмите, чтобы указать близкого</div>`;
+                container.innerHTML = `<div class="heir-badge" id="heir-badge-click" style="border-color: #ff4d4d; color: #ff4d4d;">⚠️ Нажмите, чтобы указать близкого</div>`;
+                document.getElementById('heir-badge-click').addEventListener('click', setupHeir);
             } else {
                 container.innerHTML = '';
             }
@@ -201,7 +201,6 @@
 
         function waterTree() {
             if (treeStatus === 'harvested') {
-                // Если дерево было срублено, первый полив сажает новое
                 treeStatus = 'growing';
                 currentBalance = 0;
             }
@@ -213,7 +212,6 @@
             currentBalance += netAmount;
             treeStatus = 'growing'; 
             
-            // Жесткое сохранение в память чисел, а не строк
             localStorage.setItem('crypto_garden_balance', currentBalance.toString());
             localStorage.setItem('crypto_garden_status', treeStatus);
             
@@ -247,7 +245,5 @@
             }
         }
 
-        function openFriendGarden() { alert("Сад в разработке"); }
-    </script>
-</body>
-</html>
+        // Железобетонная привязка кликов через Event Listeners
+        document.getElementById('btn-water').addEventListener('click', waterTree);
