@@ -78,53 +78,63 @@
         const tg = window.Telegram.WebApp;
         if (tg) { try { tg.expand(); } catch(e) {} }
 
-        // Память устройства
+        // Загрузка баланса
         let savedBalance = localStorage.getItem('crypto_garden_balance');
         let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
         if (isNaN(currentBalance)) { currentBalance = 0; }
         
         let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
         
-        // 🎭 Считываем стиль дерева (по умолчанию classic. Еще могут быть: cyberpunk, christmas, palm)
+        // Скины: теперь включает 'gold' (Золотое дерево благодарности)
         let treeStyle = localStorage.getItem('crypto_garden_style') || 'classic';
 
-        // Выводим баланс
+        // Инициализация интерфейса
         document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
         updateTitle();
+        updateTreeVisual(currentBalance, treeStatus, treeStyle);
 
         function updateTitle() {
-            let styleNames = { 'classic': 'Обычное', 'cyberpunk': 'Киберпанк 🤖', 'christmas': 'Рождественское 🎄', 'palm': 'Пальма 🌴' };
-            document.getElementById('tree-title').innerText = "Заначка — " + (styleNames[treeStyle] || 'Обычное');
+            let styleNames = { 
+                'classic': 'Обычное дерево', 
+                'cyberpunk': 'Киберпанк 🤖', 
+                'christmas': 'Рождественское 🎄', 
+                'palm': 'Пальма 🌴',
+                'gold': 'Золотое (Спасибо! ❤️)' 
+            };
+            document.getElementById('tree-title').innerText = "Заначка — " + (styleNames[treeStyle] || 'Обычное дерево');
         }
 
-        // 🌳 Улучшенная функция смены графики под скины!
+        // Динамическая смена стадий роста в зависимости от баланса и скина
         function updateTreeVisual(balance, status, style) {
             const treeImg = document.getElementById('tree-image');
             if (!treeImg) return;
             
-            // Первая стадия (семечка) ВСЕГДА tree1.png для всех стилей
-            if (balance === 0 && status === 'growing') {
-                treeImg.src = "tree1.png";
+            // Если урожай уже собран
+            if (status === 'harvested') {
+                treeImg.src = "tree4.png"; 
                 return;
             }
 
-            // Суффикс для скинов (если стиль классический — суффикса нет)
+            // Суффикс для скинов (для классического стиля суффикса у файлов нет)
             let suffix = style === 'classic' ? '' : '_' + style;
-
-            if (status === 'closed') {
-                treeImg.src = "tree3" + suffix + ".png"; // Залочено (Цветущее)
-            } else if (status === 'harvested') {
-                treeImg.src = "tree4" + suffix + ".png"; // Снятие урожая
-            } else {
-                treeImg.src = "tree2" + suffix + ".png"; // Растущий кустик со скином!
+            
+            // Определение стадии роста по балансу
+            let stage = 1; // Семечка / Росток
+            if (balance > 0 && balance <= 50) {
+                stage = 1; 
+            } else if (balance > 50 && balance <= 200) {
+                stage = 2; // Среднее дерево
+            } else if (balance > 200) {
+                stage = 3; // Большое цветущее дерево
             }
+
+            // Формируем имя файла, например: tree1.png, tree2_cyberpunk.png, tree3_gold.png
+            treeImg.src = "tree" + stage + suffix + ".png";
         }
 
-        updateTreeVisual(currentBalance, treeStatus, treeStyle);
-
-        // Функция быстрой смены скина для теста по кругу
+        // Переключение скинов по кругу (все бесплатно, золотое активирует повышенную комиссию!)
         function changeTreeStyle() {
-            let styles = ['classic', 'cyberpunk', 'christmas', 'palm'];
+            let styles = ['classic', 'cyberpunk', 'christmas', 'palm', 'gold'];
             let currentIndex = styles.indexOf(treeStyle);
             let nextIndex = (currentIndex + 1) % styles.length;
             treeStyle = styles[nextIndex];
@@ -135,18 +145,25 @@
         }
 
         function waterTree() {
-            if (treeStatus === 'closed' || treeStatus === 'harvested') {
-                alert("Это дерево зафиксировано. Пополнить его нельзя!");
+            if (treeStatus === 'harvested') {
+                alert("Урожай собран. Посадите новое дерево (обнулите баланс)!");
                 return;
             }
             
             let deposit = 10;
-            let netAmount = deposit * 0.99; // 1% комиссия
+            
+            // Если выбран золотой скин — берем 2% комиссии для доната, иначе стандартный 1%
+            let feePercent = (treeStyle === 'gold') ? 0.02 : 0.01;
+            let netAmount = deposit * (1 - feePercent);
+            
             currentBalance += netAmount;
+            treeStatus = 'growing'; // Сбрасываем статус в "растет" при поливе
             
             document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
-            updateTreeVisual(currentBalance, treeStatus, treeStyle);
             localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
+            localStorage.setItem('crypto_garden_status', treeStatus);
+            
+            updateTreeVisual(currentBalance, treeStatus, treeStyle);
         }
 
         function harvestTree() {
@@ -158,8 +175,12 @@
             if (password) {
                 alert("Урожай собран! Вы забираете: " + currentBalance.toFixed(2));
                 currentBalance = 0;
+                treeStatus = 'harvested';
+                
                 document.getElementById('balance-display').innerText = currentBalance.toFixed(2);
                 localStorage.setItem('crypto_garden_balance', '0.00');
+                localStorage.setItem('crypto_garden_status', treeStatus);
+                
                 updateTreeVisual(currentBalance, treeStatus, treeStyle);
             }
         }
