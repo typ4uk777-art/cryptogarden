@@ -47,9 +47,8 @@
 <body>
 
     <div class="header">
-        <!-- Показываем ID дерева, чтобы заложить Сад из множества растений -->
-        <div class="balance-title" id="tree-title">Дерево #1 — Заначка</div>
-        <div class="balance-value" id="balance-display">Загрузка...</div>
+        <div class="balance-title" id="tree-title">Мой Сад — Заначка</div>
+        <div class="balance-value" id="balance-display">0.00</div>
     </div>
 
     <div class="garden-container">
@@ -79,36 +78,27 @@
         const tg = window.Telegram.WebApp;
         if (tg) { try { tg.expand(); } catch(e) {} }
 
-        const urlParams = new URLSearchParams(window.location.search);
+        // 🧠 Полностью автономное чтение баланса из памяти устройства (без тегов конструкторов)
+        let savedBalance = localStorage.getItem('crypto_garden_balance');
+        let currentBalance = savedBalance ? parseFloat(savedBalance) : 0;
         
-        // 🆔 Считываем ID дерева (по умолчанию #1)
-        let treeId = urlParams.get('tree_id') || '1';
-        document.getElementById('tree-title').innerText = "Дерево #" + treeId + " — Заначка";
+        // Чтение статуса (по умолчанию растет)
+        let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
 
-        // Считываем баланс
-        let rawBalance = urlParams.get('Balance') || urlParams.get('balance');
-        let currentBalance = parseFloat(rawBalance);
-        if (isNaN(currentBalance)) { currentBalance = 0; }
-        
-        // Считываем статус (growing / closed / harvested)
-        let treeStatus = urlParams.get('Status') || urlParams.get('status') || 'growing';
-
-        // Отображаем мультивалютный баланс
+        // Выводим баланс на экран
         document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        // 🌳 Динамическая графика по твоей задумке
         function updateTreeVisual(balance, status) {
             const treeImg = document.getElementById('tree-image');
-            
             if (status === 'closed') {
-                treeImg.src = "tree3.png"; // Стадия 3: Залочено / Расцвело
+                treeImg.src = "tree3.png"; 
             } else if (status === 'harvested') {
-                treeImg.src = "tree4.png"; // Стадия 4: Снятие урожая
+                treeImg.src = "tree4.png"; 
             } else {
                 if (balance === 0) {
-                    treeImg.src = "tree1.png"; // Стадия 1: Росток
+                    treeImg.src = "tree1.png"; 
                 } else {
-                    treeImg.src = "tree2.png"; // Стадия 2: Кустик (безлимитный сбор)
+                    treeImg.src = "tree2.png"; 
                 }
             }
         }
@@ -122,49 +112,34 @@
             }
             
             let deposit = 10;
-            let netAmount = deposit * 0.99; // 1% комиссия на входе
+            let netAmount = deposit * 0.99; // 1% комиссия садовника
             
             currentBalance += netAmount;
             document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             updateTreeVisual(currentBalance, treeStatus);
             
-            if (tg && tg.sendData) {
-                tg.sendData("water_" + treeId + "_" + currentBalance.toFixed(2));
-                setTimeout(() => { tg.close(); }, 500);
-            } else {
-                alert("Имитация полива дерева #" + treeId);
-            }
+            // 💾 Сохраняем прямо в память телефона!
+            localStorage.setItem('crypto_garden_balance', currentBalance.toFixed(2));
         }
 
         function harvestTree() {
-            alert("Для обналички или фиксации введите секретное слово в диалоге с ботом!");
-            if (tg && tg.sendData) {
-                tg.sendData("trigger_lock_" + treeId);
-                setTimeout(() => { tg.close(); }, 500);
-            }
-        }
-
-        function giftTree() {
-            // 🎁 Проверка: дарить можно ТОЛЬКО залоченное (цветущее) дерево!
-            if (treeStatus !== 'closed') {
-                alert("Подарить можно только зафиксированное дерево! Сначала залочьте заначку (Стадия 3), придумав секретное слово.");
+            if (currentBalance === 0) {
+                alert("Дерево пока пустое. Полейте его!");
                 return;
             }
             
-            alert("Переключаем бота в режим создания подарочной ссылки...");
-            if (tg && tg.sendData) {
-                tg.sendData("trigger_gift_" + treeId);
-                setTimeout(() => { tg.close(); }, 500);
+            let password = prompt("Введите секретное слово для обналички заначки:");
+            if (password) {
+                alert("Урожай собран! Вы забираете: " + currentBalance.toFixed(2));
+                currentBalance = 0;
+                document.getElementById('balance-display').innerText = currentBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                localStorage.setItem('crypto_garden_balance', '0.00');
+                updateTreeVisual(currentBalance, treeStatus);
             }
         }
 
-        function openFriendGarden() {
-            alert("Открываем меню вашего Сада для переключения между деревьями...");
-            if (tg && tg.sendData) {
-                tg.sendData("trigger_menu");
-                setTimeout(() => { tg.close(); }, 500);
-            }
-        }
+        function giftTree() { alert("Экран создания подарка в разработке"); }
+        function openFriendGarden() { alert("Сад друзей в разработке"); }
     </script>
 </body>
 </html>
