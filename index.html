@@ -1,4 +1,4 @@
-html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -69,7 +69,7 @@ html<!DOCTYPE html>
     </div>
 
     <script>
-        console.log("=== 🧱 TON Garden: Ультимативный Безопасный Монолит Развернут ===");
+        console.log("=== 🧱 TON Garden: Ультимативный Исправленный Монолит ===");
         
         function triggerBlur() {
             document.getElementById('blurLayer').classList.toggle('active');
@@ -99,7 +99,6 @@ html<!DOCTYPE html>
 
         function openGestureCanvas() {
             document.getElementById('gestureOverlay').style.display = 'flex';
-            // Проверка на запуск с ПК (мышь есть, тача нет)
             if (!('ontouchstart' in window)) {
                 document.getElementById('gestureText').innerHTML = `<span style="color:#ff3b30;font-weight:bold;">⚠️ СИСТЕМНЫЙ БЛЭКАУТ: Вход с ПК заблокирован.</span><br>Биометрический холст требует контакта пальца с сенсором.`;
                 canvas.style.pointerEvents = 'none';
@@ -116,7 +115,11 @@ html<!DOCTYPE html>
 
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
-            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            // Ювелирное исправление: считываем координаты строго первого тач-пальца [0]
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: 0, y: 0 };
         }
 
         function startDraw(e) {
@@ -139,7 +142,7 @@ html<!DOCTYPE html>
 
         canvas.addEventListener('touchstart', startDraw, { passive: false });
         canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', stopDraw);
+
     </script>
 </body>
 </html>
