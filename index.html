@@ -92,7 +92,33 @@
             if(mode === 'helper') tabs.helper.className = 'mode-tab active-helper';
             if(mode === 'admin') tabs.admin.className = 'mode-tab active-admin';
             console.log("Режим маскировки переключен на: " + mode);
+            
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDraw);
+
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
         }
+
+        function startDraw(e) {
+            isDrawing = true;
+            const pos = getCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getCoords(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            e.preventDefault();
+        }
+
+        function stopDraw() { isDrawing = false; }
     </script>
 </body>
 </html>
