@@ -15,7 +15,7 @@
         .bonsai-canvas-wrapper { width: 280px; height: 280px; display: flex; justify-content: center; align-items: center; position: relative; }
         .stealth-blur-layer { position: absolute; width: 100%; height: 100%; background: rgba(11, 15, 18, 0.3); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; z-index: 5; border-radius: 16px; }
         .stealth-blur-layer.active { opacity: 1; pointer-events: auto; }
-        .bonsai-image { width: 100%; height: 100%; object-fit: contain; }
+        .bonsai-image { width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s ease; }
         .control-panel { width: 100%; padding: 24px 20px; background: linear-gradient(360deg, #07090c 0%, rgba(11, 15, 18, 0.9) 100%); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-top: 1px solid rgba(255, 255, 255, 0.03); border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 16px; z-index: 10; }
         .action-button { width: 100%; padding: 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #1e2633 0%, #131922 100%); color: #e3e9ed; font-size: 15px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: center; align-items: center; gap: 10px; transition: background 0.2s, transform 0.1s; }
         .action-button:active { transform: scale(0.98); background: linear-gradient(135deg, #131922 0%, #0d1117 100%); }
@@ -69,8 +69,15 @@
     </div>
 
     <script>
-        console.log("=== 🧱 TON Garden: Ультимативный Исправленный Монолит ===");
+        console.log("=== 🧱 TON Garden: Ультимативный Монолит v3.0 ===");
         
+        let points = [];
+        let totalTrees = 12;
+        let isDrawing = false;
+        
+        const canvas = document.getElementById('gestureCanvas');
+        const ctx = canvas.getContext('2d');
+
         function triggerBlur() {
             document.getElementById('blurLayer').classList.toggle('active');
         }
@@ -82,10 +89,6 @@
             if(mode === 'helper') tabs.helper.className = 'mode-tab active-helper';
             if(mode === 'admin') tabs.admin.className = 'mode-tab active-admin';
         }
-
-        const canvas = document.getElementById('gestureCanvas');
-        const ctx = canvas.getContext('2d');
-        let isDrawing = false;
 
         function initCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -111,60 +114,23 @@
         
         function closeGestureCanvas() {
             document.getElementById('gestureOverlay').style.display = 'none';
+            points = [];
+            initCanvas();
         }
 
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
             if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                // Жесткая привязка к первому пальцу тача [0] для обхода багов Webview
+                const p = { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                if (isDrawing) points.push(p);
+                return p;
             }
             return { x: 0, y: 0 };
         }
 
         function startDraw(e) {
             isDrawing = true;
-            const pos = getCoords(e);
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            e.preventDefault();
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            const pos = getCoords(e);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-            e.preventDefault();
-        }
-
-       function stopDraw() { 
-            if (isDrawing && points.length > 5) {
-                validateHeartGesture();
-            }
-            isDrawing = false; 
-        }
-
-        // === 🧠 БЛОК 3: МАТЕМАТИКА ВАЛИДАЦИИ И СИМУЛЯЦИЯ РОСТА ===
-        let points = [];
-        let totalTrees = 12;
-
-        function closeGestureCanvas() {
-            document.getElementById('gestureOverlay').style.display = 'none';
-            points = [];
-            initCanvas();
-        }
-
-        // Сохраняем точки для вектора (с фильтром Poco от фантомных нажатий)
-        function getCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            const p = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-            if (isDrawing) points.push(p);
-            return p;
-        }
-
-        function startDraw(e) {
-            isDrawing = true;
             points = [];
             const pos = getCoords(e);
             ctx.beginPath();
@@ -177,57 +143,4 @@
             const pos = getCoords(e);
             ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            e.preventDefault();
-        }
-
-        // Шпионский векторный калькулятор формы сердечка (The Vector Heart Guard)
-        function validateHeartGesture() {
-            let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
-            points.forEach(p => {
-                if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
-                if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-            });
-
-            const height = maxY - minY;
-            const width = maxX - minX;
-
-            // Защита от дурака: если нарисована просто точка или короткая линия - игнорируем
-            if (height < 40 || width < 40) return;
-
-            // Наш казуальный шпионский допуск 25%: проверяем, что это не круг, а фигура с выемкой
-            const startPoint = points[0];
-            const midPoint = points[Math.floor(points.length / 2)];
-            const endPoint = points[points.length - 1];
-
-            if (Math.abs(startPoint.x - endPoint.x) < width * 0.4 && midPoint.y > minY + height * 0.5) {
-                // Триумф! Жест распознан как каноничное Семейное Сердечко!
-                totalTrees++;
-                document.getElementById('gardenCounter').innerHTML = `🌱 Всего выращено: ${totalTrees} деревьев`;
-                
-                // Эффект импульса: дерево визуально реагирует на полив
-                const img = document.getElementById('bonsaiImg');
-                img.style.transform = 'scale(1.1)';
-                setTimeout(() => img.style.transform = 'scale(1)', 300);
-
-                alert("✨ Доступ подтвержден! Новое дерево успешно выращено в вашем Саду!");
-                closeGestureCanvas();
-            }
-        }
-
-        // Скрытый удержатель Создателя (2 секунды на логотип/угол)
-        const masterTrigger = document.getElementById('masterTrigger');
-        let triggerTimeout;
-
-        masterTrigger.addEventListener('touchstart', (e) => {
-            triggerTimeout = setTimeout(() => {
-                document.getElementById('adminPanel').style.display = 'flex';
-            }, 2000);
-        });
-        masterTrigger.addEventListener('touchend', () => clearTimeout(triggerTimeout));
-
-        canvas.addEventListener('touchstart', startDraw, { passive: false });
-        canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', stopDraw);
-    </script>
-</body>
-</html>
+            e.preventDefault();}function stopDraw() {if (isDrawing && points.length > 5) {validateHeartGesture();}isDrawing = false;}function validateHeartGesture() {let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;points.forEach(p => {if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;});const height = maxY - minY;const width = maxX - minX;if (height < 40 || width < 40) return;const startPoint = points[0];const midPoint = points[Math.floor(points.length / 2)];const endPoint = points[points.length - 1];if (Math.abs(startPoint.x - endPoint.x) < width * 0.5 && midPoint.y > minY + height * 0.3) {totalTrees++;document.getElementById('gardenCounter').innerHTML = 🌱 Всего выращено: ${totalTrees} деревьев;const img = document.getElementById('bonsaiImg');img.style.transform = 'scale(1.1)';setTimeout(() => img.style.transform = 'scale(1)', 300);alert("✨ Доступ подтвержден! Новое дерево успешно выращено в вашем Саду!");closeGestureCanvas();}}const masterTrigger = document.getElementById('masterTrigger');let triggerTimeout;masterTrigger.addEventListener('touchstart', (e) => {triggerTimeout = setTimeout(() => {document.getElementById('adminPanel').style.display = 'flex';}, 2000);});masterTrigger.addEventListener('touchend', () => clearTimeout(triggerTimeout));canvas.addEventListener('touchstart', startDraw, { passive: false });canvas.addEventListener('touchmove', draw, { passive: false });canvas.addEventListener('touchend', stopDraw);
