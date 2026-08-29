@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+html<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -29,13 +29,12 @@
         .mode-tab.active-admin { background: #721c24; color: #fff; }
         .gesture-fullscreen-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 9, 12, 0.98); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
         .gesture-instruction { font-size: 14px; color: #88929a; margin-bottom: 20px; letter-spacing: 0.5px; text-align: center; pointer-events: none; }
-        #gestureCanvas { border: 1px solid rgba(255, 255, 255, 0.04); background: #0b0f12; border-radius: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.6); cursor: crosshair; }
+        #gestureCanvas { border: 1px solid rgba(255, 255, 255, 0.06); background: #07090c; border-radius: 24px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        
         <div class="header-bar">
             <div class="global-counter" id="gardenCounter">🌱 Всего выращено: 12 деревьев</div>
             <div class="invisible-master-trigger" id="masterTrigger"></div>
@@ -63,39 +62,57 @@
         </div>
 
         <div class="gesture-fullscreen-canvas" id="gestureOverlay">
-            <div class="gesture-instruction">🔒 Нарисуйте секретное Векторное Сердечко<br>для подтверждения прав доступа</div>
+            <div class="gesture-instruction" id="gestureText">🔒 Нарисуйте секретное Векторное Сердечко<br>для подтверждения прав доступа</div>
             <canvas id="gestureCanvas" width="320" height="320"></canvas>
             <button class="action-button" style="width: 200px; margin-top: 20px; padding: 10px;" onclick="closeGestureCanvas()">Отмена</button>
         </div>
-
     </div>
 
     <script>
-        console.log("=== 🧱 БЛОК 1: Визуальный каркас TON Garden развернут ===");
+        console.log("=== 🧱 TON Garden: Ультимативный Безопасный Монолит Развернут ===");
         
         function triggerBlur() {
             document.getElementById('blurLayer').classList.toggle('active');
         }
         
-        function openGestureCanvas() {
-            document.getElementById('gestureOverlay').style.display = 'flex';
-        }
-        
-        function closeGestureCanvas() {
-            document.getElementById('gestureOverlay').style.display = 'none';
-        }
-
         function switchMode(mode) {
             const tabs = { user: document.getElementById('tabUser'), helper: document.getElementById('tabHelper'), admin: document.getElementById('tabAdmin') };
             Object.values(tabs).forEach(tab => tab.className = 'mode-tab');
             if(mode === 'user') tabs.user.className = 'mode-tab active-user';
             if(mode === 'helper') tabs.helper.className = 'mode-tab active-helper';
             if(mode === 'admin') tabs.admin.className = 'mode-tab active-admin';
-            console.log("Режим маскировки переключен на: " + mode);
-            
-        canvas.addEventListener('touchstart', startDraw, { passive: false });
-        canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', stopDraw);
+        }
+
+        const canvas = document.getElementById('gestureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function initCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#007aff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#007aff';
+        }
+
+        function openGestureCanvas() {
+            document.getElementById('gestureOverlay').style.display = 'flex';
+            // Проверка на запуск с ПК (мышь есть, тача нет)
+            if (!('ontouchstart' in window)) {
+                document.getElementById('gestureText').innerHTML = `<span style="color:#ff3b30;font-weight:bold;">⚠️ СИСТЕМНЫЙ БЛЭКАУТ: Вход с ПК заблокирован.</span><br>Биометрический холст требует контакта пальца с сенсором.`;
+                canvas.style.pointerEvents = 'none';
+            } else {
+                document.getElementById('gestureText').innerHTML = `🔒 Нарисуйте секретное Векторное Сердечко<br>для подтверждения прав доступа`;
+                canvas.style.pointerEvents = 'auto';
+                initCanvas();
+            }
+        }
+        
+        function closeGestureCanvas() {
+            document.getElementById('gestureOverlay').style.display = 'none';
+        }
 
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
@@ -119,6 +136,10 @@
         }
 
         function stopDraw() { isDrawing = false; }
+
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDraw);
     </script>
 </body>
 </html>
