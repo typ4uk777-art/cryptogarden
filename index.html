@@ -69,12 +69,9 @@
     </div>
 
     <script>
-        console.log("=== 🧱 TON Garden: Ультимативный Монолит v3.0 ===");
-        
         let points = [];
         let totalTrees = 12;
         let isDrawing = false;
-        
         const canvas = document.getElementById('gestureCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -121,7 +118,7 @@
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
             if (e.touches && e.touches.length > 0) {
-                // Жесткая привязка к первому пальцу тача [0] для обхода багов Webview
+                // Ювелирный фикс: индекс [0] возвращен для считывания первого пальца тача!
                 const p = { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
                 if (isDrawing) points.push(p);
                 return p;
@@ -138,9 +135,55 @@
             e.preventDefault();
         }
 
+        // Исправленный цикл непрерывного тач-рисования
         function draw(e) {
             if (!isDrawing) return;
             const pos = getCoords(e);
             ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            e.preventDefault();}function stopDraw() {if (isDrawing && points.length > 5) {validateHeartGesture();}isDrawing = false;}function validateHeartGesture() {let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;points.forEach(p => {if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;});const height = maxY - minY;const width = maxX - minX;if (height < 40 || width < 40) return;const startPoint = points[0];const midPoint = points[Math.floor(points.length / 2)];const endPoint = points[points.length - 1];if (Math.abs(startPoint.x - endPoint.x) < width * 0.5 && midPoint.y > minY + height * 0.3) {totalTrees++;document.getElementById('gardenCounter').innerHTML = 🌱 Всего выращено: ${totalTrees} деревьев;const img = document.getElementById('bonsaiImg');img.style.transform = 'scale(1.1)';setTimeout(() => img.style.transform = 'scale(1)', 300);alert("✨ Доступ подтвержден! Новое дерево успешно выращено в вашем Саду!");closeGestureCanvas();}}const masterTrigger = document.getElementById('masterTrigger');let triggerTimeout;masterTrigger.addEventListener('touchstart', (e) => {triggerTimeout = setTimeout(() => {document.getElementById('adminPanel').style.display = 'flex';}, 2000);});masterTrigger.addEventListener('touchend', () => clearTimeout(triggerTimeout));canvas.addEventListener('touchstart', startDraw, { passive: false });canvas.addEventListener('touchmove', draw, { passive: false });canvas.addEventListener('touchend', stopDraw);
+            e.preventDefault();
+        }
+
+        function stopDraw() { 
+            if (isDrawing && points.length > 5) validateHeartGesture();
+            isDrawing = false; 
+        }
+
+        function validateHeartGesture() {
+            let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
+            points.forEach(p => {
+                if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+                if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+            });
+            const height = maxY - minY;
+            const width = maxX - minX;
+            if (height < 40 || width < 40) return;
+            const startPoint = points[0];
+            const midPoint = points[Math.floor(points.length / 2)];
+            const endPoint = points[points.length - 1];
+            if (Math.abs(startPoint.x - endPoint.x) < width * 0.5 && midPoint.y > minY + height * 0.3) {
+                totalTrees++;
+                document.getElementById('gardenCounter').innerHTML = `🌱 Всего выращено: ${totalTrees} деревьев`;
+                const img = document.getElementById('bonsaiImg');
+                img.style.transform = 'scale(1.1)';
+                setTimeout(() => img.style.transform = 'scale(1)', 300);
+                alert("✨ Доступ подтвержден! Новое дерево успешно выращено в вашем Саду!");
+                closeGestureCanvas();
+            }
+        }
+
+        const masterTrigger = document.getElementById('masterTrigger');
+        let triggerTimeout;
+        masterTrigger.addEventListener('touchstart', (e) => {
+            triggerTimeout = setTimeout(() => {
+                document.getElementById('adminPanel').style.style.display = 'flex';
+            }, 2000);
+        });
+        masterTrigger.addEventListener('touchend', () => clearTimeout(triggerTimeout));
+
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDraw);
+    </script>
+</body>
+</html>
