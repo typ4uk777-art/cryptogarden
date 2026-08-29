@@ -137,41 +137,97 @@
             e.preventDefault();
         }
 
-        function stopDraw() { isDrawing = false; }
-
-         function stopDraw() { isDrawing = false; }
-
-        // === 🛠️ ДОПИСКА БЛОКА 2: ОЖИВЛЕНИЕ КНОПОК И МАСКИРОВКИ ===
-        
-        // 1. Оживляем кнопку "Отмена" на холсте жестов
-        function closeGestureCanvas() {
-            document.getElementById('gestureOverlay').style.display = 'none';
-            initCanvas(); // Сразу очищаем холст при закрытии
+       function stopDraw() { 
+            if (isDrawing && points.length > 5) {
+                validateHeartGesture();
+            }
+            isDrawing = false; 
         }
 
-        // 2. Активируем скрытый триггер Создателя (Зажатие invisible-зоны на 2 секунды)
+        // === 🧠 БЛОК 3: МАТЕМАТИКА ВАЛИДАЦИИ И СИМУЛЯЦИЯ РОСТА ===
+        let points = [];
+        let totalTrees = 12;
+
+        function closeGestureCanvas() {
+            document.getElementById('gestureOverlay').style.display = 'none';
+            points = [];
+            initCanvas();
+        }
+
+        // Сохраняем точки для вектора (с фильтром Poco от фантомных нажатий)
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const p = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+            if (isDrawing) points.push(p);
+            return p;
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            points = [];
+            const pos = getCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getCoords(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            e.preventDefault();
+        }
+
+        // Шпионский векторный калькулятор формы сердечка (The Vector Heart Guard)
+        function validateHeartGesture() {
+            let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
+            points.forEach(p => {
+                if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+                if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+            });
+
+            const height = maxY - minY;
+            const width = maxX - minX;
+
+            // Защита от дурака: если нарисована просто точка или короткая линия - игнорируем
+            if (height < 40 || width < 40) return;
+
+            // Наш казуальный шпионский допуск 25%: проверяем, что это не круг, а фигура с выемкой
+            const startPoint = points[0];
+            const midPoint = points[Math.floor(points.length / 2)];
+            const endPoint = points[points.length - 1];
+
+            if (Math.abs(startPoint.x - endPoint.x) < width * 0.4 && midPoint.y > minY + height * 0.5) {
+                // Триумф! Жест распознан как каноничное Семейное Сердечко!
+                totalTrees++;
+                document.getElementById('gardenCounter').innerHTML = `🌱 Всего выращено: ${totalTrees} деревьев`;
+                
+                // Эффект импульса: дерево визуально реагирует на полив
+                const img = document.getElementById('bonsaiImg');
+                img.style.transform = 'scale(1.1)';
+                setTimeout(() => img.style.transform = 'scale(1)', 300);
+
+                alert("✨ Доступ подтвержден! Новое дерево успешно выращено в вашем Саду!");
+                closeGestureCanvas();
+            }
+        }
+
+        // Скрытый удержатель Создателя (2 секунды на логотип/угол)
         const masterTrigger = document.getElementById('masterTrigger');
         let triggerTimeout;
 
-        // Для Poco X3 и Redmi Pad (Тач-события)
         masterTrigger.addEventListener('touchstart', (e) => {
-            triggerTimeout = setTimeout(() => {
-                document.getElementById('adminPanel').style.display = 'flex';
-                console.log("🔴 Режим Создателя активирован таймлоком!");
-            }, 2000); // Ровно 2 секунды удержания
-        });
-
-        masterTrigger.addEventListener('touchend', () => {
-            clearTimeout(triggerTimeout);
-        });
-
-        // На всякий случай для компа (зажатие мышки)
-        masterTrigger.addEventListener('mousedown', (e) => {
             triggerTimeout = setTimeout(() => {
                 document.getElementById('adminPanel').style.display = 'flex';
             }, 2000);
         });
+        masterTrigger.addEventListener('touchend', () => clearTimeout(triggerTimeout));
 
-        masterTrigger.addEventListener('mouseup', () => {
-            clearTimeout(triggerTimeout);
-        });
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDraw);
+    </script>
+</body>
+</html>
