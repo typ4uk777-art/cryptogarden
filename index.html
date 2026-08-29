@@ -1,124 +1,333 @@
-<!DOCTYPE html>
+html<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Крипто-Сад</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TON Garden - Autonomous Web3 Ecosystem</title>
     <style>
-        body { margin:0; padding:0; background:#181818; color:#fff; font-family:-apple-system,Arial,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:space-between; height:100vh; overflow:hidden; }
-        .header { text-align:center; margin-top:15px; width:100%; position:relative; }
-        .balance-title { font-size:13px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
-        .balance-value { font-size:32px; font-weight:bold; margin-top:5px; color:#2f80ed; }
-        .heir-badge { background:#242424; border:1px dashed #ffc107; padding:6px 12px; border-radius:20px; font-size:12px; display:inline-flex; gap:5px; margin-top:8px; color:#ffc107; cursor:pointer; }
-        .garden-container { flex-grow:1; display:flex; align-items:center; justify-content:center; width:100%; pointer-events:none; position:relative; }
-        .crypto-tree { max-width:80%; max-height:40vh; object-fit:contain; transform-origin:bottom center; animation:gentle-breeze 4s ease-in-out infinite alternate; pointer-events:auto; transition:filter .5s,opacity .5s; }
-        .tree-evolution { filter:blur(12px) brightness(.4); opacity:.4; }
-        @keyframes gentle-breeze { 0% { transform:rotate(-1.5deg); } 100% { transform:rotate(1.5deg); } }
-        .controls-panel { width:90%; max-width:400px; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; position:relative; z-index:10; }
-        .btn { background:#242424; border:1px solid #333; color:#fff; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
-        .btn:active { transform:scale(.96); background:#2d2d2d; }
-        .btn-water { background:linear-gradient(135deg,#2f80ed,#0056b3); border:none; grid-column:span 2; padding:14px; font-size:15px; }
-        .btn-ton { background:linear-gradient(135deg,#0088cc,#005580); border:none; grid-column:span 2; padding:12px; font-size:13px; font-weight:bold; }
-        .mode-switcher { position:absolute; top:0; left:10px; font-size:10px; color:#555; cursor:pointer; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.85); z-index:100; align-items:center; justify-content:center; }
-        .modal-content { background:#222; border:1px solid #333; padding:20px; border-radius:16px; width:85%; max-width:340px; text-align:center; }
-        .modal-title { font-size:18px; font-weight:bold; margin-bottom:15px; color:#2f80ed; }
-        .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; }
-        .modal-btn { background:#2a2a2a; border:1px solid #444; color:#fff; padding:10px; border-radius:10px; cursor:pointer; font-size:12px; font-weight:bold; }
-        .close-modal { background:none; border:none; color:#aaa; cursor:pointer; font-size:14px; margin-top:5px; text-decoration:underline; }
+        /* === 🧱 БЛОК 1: ТИТАНОВАЯ СТИЛИЗАЦИЯ И ИЗОЛЯЦИЯ ИНТЕРФЕЙСА === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #0b0f12;
+            color: #e3e9ed;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Основной контейнер с адаптацией под Poco X3 и Redmi Pad */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            margin: 0 auto;
+            background: linear-gradient(185deg, #0f141c 0%, #080b0f 100%);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Элитный верхний бар со скрытым триггером Создателя */
+        .header-bar {
+            width: 100%;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 20, 28, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            z-index: 10;
+        }
+
+        .global-counter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #39d353;
+            text-shadow: 0 0 10px rgba(57, 211, 83, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        /* 🎭 Тот самый невидимый шпионский триггер маскировки Создателя */
+        .invisible-master-trigger {
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            position: relative;
+            background: transparent;
+        }
+
+        /* === 🌳 СЦЕНА КАРУСЕЛИ И СКАЗОЧНЫЙ ГОРШОК GONDOR STYLE === */
+        .garden-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        .bonsai-canvas-wrapper {
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Размытие экрана (Блюр-Камуфляж от подглядывания) */
+        .stealth-blur-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 18, 0.3);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+            border-radius: 16px;
+        }
+
+        .stealth-blur-layer.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bonsai-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* === 🎛️ ДЕТОКС-ИНТЕРФЕЙС И ГЛЯНЦЕВЫЕ КНОПКИ === */
+        .control-panel {
+            width: 100%;
+            padding: 24px 20px;
+            background: linear-gradient(360deg, #07090c 0%, rgba(11, 15, 18, 0.9) 100%);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #1e2633 0%, #131922 100%);
+            color: #e3e9ed;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, #131922 0%, #0d1117 100%);
+        }
+
+        .btn-miracle {
+            background: linear-gradient(135deg, #007aff 0%, #0056b3 100%);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* === 🎭 МАСКИРОВОЧНЫЙ АДМИН-ИНТЕРФЕЙС (СКРЫТ ПО УМОЛЧАНИЮ) === */
+        .admin-shape-shifter-overlay {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: rgba(15, 22, 33, 0.95);
+            border: 1px solid rgba(0, 122, 255, 0.15);
+            border-radius: 16px;
+            padding: 16px;
+            display: none; /* Проявится только по триггеру зажатия */
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .admin-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #007aff;
+            font-weight: 700;
+        }
+
+        .mode-selector {
+            display: flex;
+            background: #090d14;
+            border-radius: 10px;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #88929a;
+        }
+
+        .mode-tab.active-user { background: #1e2633; color: #fff; }
+        .mode-tab.active-helper { background: #004085; color: #fff; }
+        .mode-tab.active-admin { background: #721c24; color: #fff; }
+
+        /* === 🖌️ МАТОВЫЙ ХОЛСТ СВОБОДНОГО ЖЕСТА (СЕРДЕЧКО) === */
+        .gesture-fullscreen-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(7, 9, 12, 0.98);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gesture-instruction {
+            font-size: 14px;
+            color: #88929a;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #gestureCanvas {
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: #0b0f12;
+            border-radius: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+            cursor: crosshair;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="mode-switcher" id="btn-toggle-version">⚙️ Режим: Мульти</div>
-        <div class="balance-title" id="tree-title">Заначка</div>
-        <div class="balance-value" id="balance-display">0.00 TON</div>
-        <div id="heir-container"></div>
-    </div>
-    <div class="garden-container"><img src="tree1.png" alt="Дерево" class="crypto-tree" id="tree-image"></div>
-    <div class="controls-panel">
-        <button class="btn btn-ton" id="btn-ton">💎 Подключить TON кошелек</button>
-        <button class="btn btn-water" id="btn-water">💧 Полить заначку</button>
-        <button class="btn" id="btn-harvest">🪓 Снять урожай</button>
-        <button class="btn" id="btn-style">🎭 Сменить скин</button>
-        <button class="btn" id="btn-inherit"><span id="inherit-btn-text">📜 Сделать наследством</span></button>
-        <button class="btn" id="btn-friends" style="background:linear-gradient(135deg,#111,#222); border-color:#ffc107;">🏡 Мой Сад & Подарки</button>
-    </div>
 
-    <div class="modal" id="modal-currency">
-        <div class="modal-content">
-            <div class="modal-title">Валюта полива</div>
-            <div class="modal-grid" id="currency-grid"></div>
-            <button class="close-modal" id="close-currency">Отмена</button>
+    <div class="app-container">
+        
+        <!-- Верхний бар с счетчиком и скрытой зоной Создателя -->
+        <div class="header-bar">
+            <div class="global-counter" id="gardenCounter">
+                🌱 Всего выращено: 12 деревьев
+            </div>
+            <!-- Скрытая шпионская зона. При зажатии на 2 сек откроет админ-тумблер -->
+            <div class="invisible-master-trigger" id="masterTrigger"></div>
         </div>
-    </div>
 
-    <div class="modal" id="modal-garden">
-        <div class="modal-content">
-            <div class="modal-title">🏡 Мой Сад</div>
-            <p style="font-size:11px; color:#ffc107; background:#2c2c2c; padding:8px; border-radius:8px; text-align:left; margin-bottom:15px; line-height:1.4;">
-                ℹ️ <b>О проекте:</b> Приложение ничего не продает. Это ваш личный инструмент для безопасного удержания заначки, создания защищенного наследства для близких и обмена подарками с друзьями.
-            </p>
-            <button class="modal-btn" id="btn-ref" style="width:100%; margin-bottom:10px; padding:12px;">🔗 Скопировать реф-ссылку</button>
-            <button class="modal-btn" id="btn-gift" style="width:100%; padding:12px; background:linear-gradient(135deg,#d4af37,#aa7c11); border:none;">🎁 Подарить Золотое Дерево</button>
-            <br><br><button class="close-modal" id="close-garden">Закрыть</button>
+        <!-- Центральная сцена с бонсай и слоем блюра -->
+        <div class="garden-stage">
+            <div class="bonsai-canvas-wrapper" id="bonsaiWrapper">
+                <div class="stealth-blur-layer" id="blurLayer"></div>
+                <!-- Дефолтное дерево-заглушка Gondor Style с прямым/изогнутым стволом -->
+                <img src="https://githubusercontent.com" onerror="this.src='https://placehold.co'" class="bonsai-image" id="bonsaiImg" alt="Bonsai Stage">
+            </div>
         </div>
+
+        <!-- Скрытый трехпозиционный тумблер переключения масок (Форма Создателя) -->
+        <div class="admin-shape-shifter-overlay" id="adminPanel">
+            <div class="admin-title">🎭 Многослойный Камуфляж Создателя</div>
+            <div class="mode-selector">
+                <div class="mode-tab active-user" id="tabUser" onclick="switchMode('user')">Обычный</div>
+                <div class="mode-tab" id="tabHelper" onclick="switchMode('helper')">Помощник</div>
+                <div class="mode-tab" id="tabAdmin" onclick="switchMode('admin')">Создатель</div>
+            </div>
+        </div>
+
+        <!-- Нижняя панель управления с глянцевыми кнопками -->
+        <div class="control-panel">
+            <button class="action-button" onclick="triggerBlur()">
+                🔒 Проверить Блюр (Камуфляж)
+            </button>
+            <button class="action-button btn-miracle" id="btnAdminAction" onclick="openGestureCanvas()">
+                🌱 Проверить жест-Сердечко
+            </button>
+        </div>
+  <div class="control-panel">
+            <button class="action-button" onclick="triggerBlur()">
+                🔒 Проверить Блюр (Камуфляж)
+            </button>
+            <button class="action-button btn-miracle" id="btnAdminAction" onclick="openGestureCanvas()">
+                🌱 Проверить жест-Сердечко
+            </button>
+        </div>
+
+       <!-- Полноэкранный матовый холст свободного рисования жестов -->
+        <div class="gesture-fullscreen-canvas" id="gestureOverlay">
+            <div class="gesture-instruction">
+                🔒 Нарисуйте секретное Векторное Сердечко<br>для подтверждения прав доступа
+            </div>
+            <canvas id="gestureCanvas" width="320" height="320"></canvas>
+            <button class="action-button" style="width: 200px; margin-top: 20px; padding: 10px;" onclick="closeGestureCanvas()">
+                Отмена
+            </button>
+        </div>
+
     </div>
 
-    <script src="https://telegram.org"></script>
     <script>
-        let tg = window.Telegram?.WebApp; if(tg) { try{tg.expand()}catch(e){} }
-        let currentBalance = parseFloat(localStorage.getItem('crypto_garden_balance') || 0);
-        let treeStatus = localStorage.getItem('crypto_garden_status') || 'growing';
-        let treeStyle = localStorage.getItem('crypto_garden_style') || 'classic';
-        let isInheritance = localStorage.getItem('crypto_garden_is_inherit') === 'true';
-        let heirContact = localStorage.getItem('crypto_garden_heir') || '';
-        let isTonConnected = localStorage.getItem('crypto_garden_ton_connected') === 'true';
-        let appMode = localStorage.getItem('crypto_garden_mode') || 'multi'; 
-        let currentCurrency = localStorage.getItem('crypto_garden_curr') || 'TON';
-        let lastStage = 1;
-
-        function updateUI(triggerAnim = false) {
-            if (appMode === 'only_ton') { currentCurrency = 'TON'; document.getElementById('btn-toggle-version').innerText = "⚙️ Режим: Только TON"; }
-            else { document.getElementById('btn-toggle-version').innerText = "⚙️ Режим: Мульти"; }
-            document.getElementById('balance-display').innerText = currentBalance.toFixed(2) + " " + currentCurrency;
-
-            let styles = {'classic':'Обычное','cyberpunk':'Киберпанк 🤖','christmas':'Рождественское 🎄','palm':'Пальма 🌴','gold':'Золотое ❤️'};
-            document.getElementById('tree-title').innerText = (isInheritance ? "📜 НАСЛЕДСТВО — " : "Заначка — ") + (styles[treeStyle] || 'Обычное');
-            document.getElementById('inherit-btn-text').innerText = isInheritance ? "📜 Обычная заначка" : "📜 Сделать наследством";
-            
-            let tonBtn = document.getElementById('btn-ton');
-            if (isTonConnected) { tonBtn.innerText = "💎 TON Кошелек: Подключен ✅"; tonBtn.style.background = "#242424"; tonBtn.style.border = "1px solid #0088cc"; }
-            else { tonBtn.innerText = "💎 Подключить TON кошелек"; tonBtn.style.background = "linear-gradient(135deg,#0088cc,#005580)"; tonBtn.style.border = "none"; }
-
-            let hc = document.getElementById('heir-container');
-            if (isInheritance) {
-                hc.innerHTML = `<div class="heir-badge" id="heir-click">${heirContact ? '⭐ Наследник: '+heirContact : '⚠️ Указать близкого'}</div>`;
-                document.getElementById('heir-click').addEventListener('click', () => {
-                    let c = prompt("Telegram @username близкого:"); if(c) { heirContact = c; localStorage.setItem('crypto_garden_heir', c); updateUI(); }
-                });
-            } else { hc.innerHTML = ''; }
-
-            let suffix = treeStyle === 'classic' ? '' : '_' + treeStyle;
-            let stage = 1; if(currentBalance > 50 && currentBalance <= 200) stage = 2; else if(currentBalance > 200) stage = 3;
-            let nextSrc = treeStatus === 'harvested' ? "tree4.png" : "tree" + stage + suffix + ".png";
-                        let img = document.getElementById('tree-image');
-            if (triggerAnim || stage !== lastStage) {
-                img.classList.add('tree-evolution');
-                setTimeout(() => { img.src = nextSrc; img.classList.remove('tree-evolution'); }, 300);
-            } else { img.src = nextSrc; }
-            lastStage = stage;
+        console.log("=== 🧱 БЛОК 1: Визуальный каркас TON Garden развернут ===");
+        
+        function triggerBlur() {
+            const layer = document.getElementById('blurLayer');
+            layer.classList.toggle('active');
         }
-
-        document.getElementById('btn-ton').addEventListener('click', () => {
-            if (isTonConnected) { if (confirm("Отключить кошелек?")) { isTonConnected = false; localStorage.setItem('crypto_garden_ton_connected', 'false'); updateUI(); } }
-            else { if (confirm("Авторизоваться через Tonkeeper?")) { isTonConnected = true; localStorage.setItem('crypto_garden_ton_connected', 'true'); alert("Кошелек привязан!"); updateUI(); } }
-        });
-
-        document.getElementById('btn-toggle-version').addEventListener('click', () => { appMode = (appMode === 'multi') ? 'only_ton' : 'multi'; localStorage.setItem('crypto_garden_mode', appMode); updateUI(); });
-        document.getElementById('btn-water').addEventListener('click', () => { if (appMode === 'only_ton') { executeWatering('TON'); } else { openCurrencyModal(); } });
-
-        function openCurrencyModal() {
-            let grid = document.getElementById('currency-grid');
-            let list = ['TON 💎', 'Stars ⭐', 'BTC 👑', 'USDT 💵', 'RUB ₽', 'USD $']; grid.innerHTML = '';
-            list.forEach(c => { let name = c.split(' ')[0]; grid.innerHTML += <button class="modal-btn" onclick="executeWatering('${name}')">${c}</button>; });document.getElementById('modal-currency').style.display = 'flex';}window.executeWatering = function(currency) {document.getElementById('modal-currency').style.display = 'none';if(treeStatus === 'harvested') { treeStatus = 'growing'; currentBalance = 0; }currentCurrency = currency; localStorage.setItem('crypto_garden_curr', currentCurrency);currentBalance += 10 * (1 - (treeStyle === 'gold' ? 0.02 : 0.01));localStorage.setItem('crypto_garden_balance', currentBalance.toString());localStorage.setItem('crypto_garden_status', treeStatus); updateUI();};document.getElementById('btn-friends').addEventListener('click', () => document.getElementById('modal-garden').style.display = 'flex');document.getElementById('btn-ref').addEventListener('click', () => alert("Ссылка скопирована!"));document.getElementById('btn-gift').addEventListener('click', () => { let f = prompt("Юзернейм друга:"); if (f) alert(🎁 Запрос отправлен! У ${f} появится Золотое Дерево.); });document.getElementById('close-currency').addEventListener('click', () => document.getElementById('modal-currency').style.display = 'none');document.getElementById('close-garden').addEventListener('click', () => document.getElementById('modal-garden').style.display = 'none');document.getElementById('btn-harvest').addEventListener('click', () => {if(currentBalance === 0) return alert("Дерево пустое!");if(isInheritance && heirContact && !confirm(Наследник подтверждает?)) return;if(prompt("Введите кодовое слово:")) {alert("Урожай собран: " + currentBalance.toFixed(2) + " " + currentCurrency); currentBalance = 0; treeStatus = 'harvested';localStorage.setItem('crypto_garden_balance', '0'); localStorage.setItem('crypto_garden_status', treeStatus); updateUI(true);}});document.getElementById('btn-style').addEventListener('click', () => {let s = ['classic', 'cyberpunk', 'christmas', 'palm', 'gold']; treeStyle = s[(s.indexOf(treeStyle) + 1) % s.length];localStorage.setItem('crypto_garden_style', treeStyle); updateUI(true);});document.getElementById('btn-inherit').addEventListener('click', () => {isInheritance = !isInheritance; localStorage.setItem('crypto_garden_is_inherit', isInheritance);if(isInheritance && !heirContact) { let c = prompt("Telegram близкого:"); if(c) heirContact = c; localStorage.setItem('crypto_garden_heir', c); }updateUI();});updateUI();
+        
+        function openGestureCanvas() {
+            document.getElementById('gestureOverlay').style.display = 'flex';
+            initCanvas();
+        }
+        
+        function closeGestureCanvas() {
+            document.getElementById('gestureOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
