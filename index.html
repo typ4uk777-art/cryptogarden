@@ -43,7 +43,6 @@
             text-align: center;
             margin-bottom: 16px;
             position: relative;
-            transition: transform 0.3s;
         }
         .bonsai-icon { font-size: 48px; margin: 12px 0; }
         .bonsai-name { font-weight: bold; font-size: 16px; }
@@ -68,7 +67,6 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
-            border: 1px solid transparent;
             user-select: none;
         }
         .tg-button:active { background: rgba(44, 44, 46, 0.9); }
@@ -91,6 +89,21 @@
             z-index: 9999;
             justify-content: center; align-items: center;
             text-align: center;
+        }
+        .vechnyi-sad-item {
+            background: #1c1c1e;
+            margin-bottom: 4px;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .blurred-text {
+            filter: blur(5px);
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .blurred-text:active {
+            filter: blur(0px);
         }
     </style>
 </head>
@@ -120,15 +133,16 @@
 
     <div style="text-align: center; font-size: 11px; color: #ff6b00; display: none; margin-bottom: 10px;" id="mask-indicator"></div>
 
+    <!-- Сцена текущего Дерева -->
     <div class="bonsai-stage" id="bonsai-card">
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <span style="cursor:pointer; padding: 0 10px;" onclick="changeTree(-1)">◀</span>
-            <span class="bonsai-name" id="tree-name">Классический Бонсай Элит</span>
+            <span class="bonsai-name" id="tree-name">Семечка (Посадите дерево)</span>
             <span style="cursor:pointer; padding: 0 10px;" onclick="changeTree(1)">▶</span>
         </div>
-        <div class="bonsai-icon" id="tree-icon">🌱</div>
-        <div id="tree-stage-text" style="font-size:13px; font-weight:bold;">Стадия 1: Росток</div>
-        <div class="bonsai-desc" id="tree-escrow">Баланс Эскроу: 150 USDT</div>
+        <div class="bonsai-icon" id="tree-icon">🥚</div>
+        <div id="tree-stage-text" style="font-size:13px; font-weight:bold;">Стадия 0: Семечка</div>
+        <div class="bonsai-desc" id="tree-escrow">Ожидание первого взноса эскроу</div>
         
         <div style="margin-top: 8px; font-size: 12px;">
             <input type="checkbox" id="inherit-check" onchange="toggleInheritance()"> Наследовать активы
@@ -138,6 +152,7 @@
         </div>
     </div>
 
+    <!-- Кнопки интерфейса -->
     <div style="flex: 1; overflow-y: auto;">
         <div class="tg-category">🔐 Авторизация и Данные</div>
         <div class="tg-button" onclick="mockAuth('Telegram')"><span>🔑 Войти через Telegram</span><span class="tg-arrow">▶</span></div>
@@ -154,17 +169,25 @@
         <div class="tg-button" onclick="printQR()"><span>📇 РАСПЕЧАТАТЬ QR-ИНВОЙС (Визитки/Транспорт)</span><span class="tg-arrow">▶</span></div>
         <div class="tg-button" onclick="triggerNfc()"><span>📟 БЕСКОНТАКТНЫЙ СЧИТЫВАТЕЛЬ NFC</span><span class="tg-arrow">▶</span></div>
         
+        <!-- Новый блок Вечного Сада -->
+        <div class="tg-category">📜 ВЕЧНЫЙ САД (АРХИВ ЗАКРЫТЫХ ДЕРЕВЬЕВ)</div>
+        <div style="max-height: 120px; overflow-y: auto; padding: 2px;" id="vechnyi-sad-list">
+            <div class="vechnyi-sad-item">🌸 Скин 'Сакура' (Свадьба) | Статус: Передано | Данные: <span class="blurred-text" title="Удерживайте для просмотра">Зашифровано TON</span></div>
+            <div class="vechnyi-sad-item">🌿 Скин 'Кошка' (Ветеринар) | Статус: Закрыто | Данные: <span class="blurred-text" title="Удерживайте для просмотра">Зашифровано TON</span></div>
+        </div>
+
         <div id="creator-section" style="display: none;">
             <div class="tg-category" style="color: #ff0055;">🛰️ План Ф (Создатель)</div>
             <div class="tg-button" style="border: 1px solid #ff0055;" onclick="alert('План Ф: Впрыск муниципального гранта под 0%')"><span>🚨 ПРЯМАЯ БЮДЖЕТНАЯ ИНТЕРВЕНЦИЯ</span><span class="tg-arrow">▶</span></div>
         </div>
     </div>
 
+    <!-- Таббар -->
     <div class="bottom-bar">
-        <span class="tab-icon" onclick="toggleBlur(true)" title="Проверить Блюр">👁️‍🗨️</span>
-        <span class="tab-icon" onclick="triggerSwipeLeft()" title="Кинуть свайпом">🚀</span>
-        <span class="tab-icon" onclick="triggerAudioVerification()" title="Голосовой код">🎙️</span>
-        <span class="tab-icon" onclick="triggerSos()" title="СОС Радар">🚨</span>
+        <span class="tab-icon" onclick="toggleBlur(true)">👁️‍🗨️</span>
+        <span class="tab-icon" onclick="triggerSwipeLeft()">🚀</span>
+        <span class="tab-icon" onclick="triggerAudioVerification()">🎙️</span>
+        <span class="tab-icon" onclick="triggerSos()">🚨</span>
     </div>
 
     <script>
@@ -172,7 +195,7 @@
             document.getElementById('pc-blocker').style.display = 'flex';
         }
 
-        window.addEventListener('pagehide', () => {
+        window.addEventListener('pagehide', function() {
             localStorage.clear();
             sessionStorage.clear();
         });
@@ -183,41 +206,13 @@
         var isSosMode = false;
         var adminClicks = 0;
 
+        // Новая база скинов и категорий по твоим ассетам
         var trees = [
-            { name: "Классический Бонсай Элит", cat: "influencer", stage: 1, funds: 150, icon: "🌱" },
-            { name: "Семейный Фонд на Отпуск (Совместный)", cat: "family", stage: 1, funds: 500, icon: "🌱" },
-            { name: "Мой Мультишаг: Сделать Тату", cat: "multistep", stage: 1, funds: 300, icon: "🌱" },
-            { name: "Капсула времени: Сын-2036", cat: "capsule", stage: 1, funds: 1000, icon: "🌱" }
-        ];
-
-        // Железобетонный фикс форматирования времени без padStart/padLeft
-        setInterval(function() {
-            if (detoxTime > 0 && !isSosMode) {
-                detoxTime--;
-                var h = Math.floor(detoxTime / 3600);
-                var m = Math.floor((detoxTime % 3600) / 60);
-                var s = detoxTime % 60;
-                
-                var hStr = h < 10 ? '0' + h : h;
-                var mStr = m < 10 ? '0' + m : m;
-                var sStr = s < 10 ? '0' + s : s;
-                
-                document.getElementById('timer-display').innerText = '⌛ ' + hStr + ':' + mStr + ':' + sStr;
-                if (detoxTime <= 0) alert("Детокс-таймер исчерпан! Закройте софт.");
-            }
-        }, 1000);
-
-        function changeTree(dir) {
-            activeTreeIndex = (activeTreeIndex + dir + trees.length) % trees.length;
-            updateTreeUI();
-        }
-
-        function updateTreeUI() {
-            var t = trees[activeTreeIndex];
-            document.getElementById('tree-name').innerText = t.name;
-            document.getElementById('tree-escrow').innerText = 'Баланс Эскроу: ' + t.funds + ' USDT';
-            
-            var st = 'Стадия ' + t.stage + ': ';
-            if (t.stage == 1) { t.icon = "🌱"; st += "Росток"; }
-            if (t.stage == 2) { t.icon = "🌿"; st += "Молодой бонсай"; }
-if (t.stage == 3) { t.icon = "🌸"; st += "Цветущее дерево"; }if (t.stage >= 4) { t.icon = "👑"; st += "Золотой финал (NFT минт)"; }document.getElementById('tree-icon').innerText = t.icon;document.getElementById('tree-stage-text').innerText = st;}function toggleBlur(show) {document.getElementById('blur-overlay').style.display = show ? 'flex' : 'none';}function mockAuth(prov) {document.getElementById('auth-status').innerText = 'Статус входа: Авторизован через [ ' + prov + ' ]';alert('Успешный вход через ' + prov);}function processTransfer(type, isFamily) {if (isFamily) {alert('Успешно (Шаг 1/2): Реквизиты проверены. Введите секретный код на шаге 2 для отправки безлимитного семейного перевода.');} else {if (strangerTransfersCount < 3) {strangerTransfersCount++;document.getElementById('stranger-count').innerText = strangerTransfersCount;alert('Шаг 1/2: Создан Смарт-Инвойс для незнакомца (сбор 1% заложен). Нажмите ОК для подтверждения шага 2.\nЛимиты суток: ' + strangerTransfersCount + '/3');} else {alert('❌ Превышен лимит! Незнакомцам можно отправлять максимум 3 раза в сутки.');}}}function triggerRefund() {var t = trees[activeTreeIndex];if (t.stage >= 4) {alert('Ошибка: Защита от дурака сработала. Смарт-контракт закрыт, NFT уже в блокчейне.');return;}var refund = t.funds;if (t.cat === "multistep") {refund = (t.funds - (t.funds * 0.1)) * (1 - (t.stage / 3));alert('Защита от дурака: Контракт расторгнут. 10% невозвратного залога ушло мастеру. Остаток ' + refund + ' USDT возвращен.');} else {alert('Защита от дурака: Контракт расторгнут под 0% комиссии. Вся сумма ' + refund + ' USDT спасена и вернулась на ваш адрес.');}t.funds = 0;t.stage = 1;updateTreeUI();}function triggerAdminMask() {adminClicks++;if (adminClicks >= 3) {var m = prompt("Пароль маски (1 - Помощник, 2 - Создатель):");var ind = document.getElementById('mask-indicator');if (m === "1") {ind.style.display = "block"; ind.innerText = "🔵 АКТИВИРОВАНА МАСКА: ПОМОЩНИК";document.getElementById('creator-section').style.display = "none";} else if (m === "2") {ind.style.display = "block"; ind.innerText = "🔴 АКТИВИРОВАНА МАСКА: СОЗДАТЕЛЬ (ПЛАН Ф)";document.getElementById('creator-section').style.display = "block";}adminClicks = 0;}}function triggerSwipeLeft() {var card = document.getElementById('bonsai-card');card.style.transform = "translateX(-150%)";setTimeout(function() {alert('🚀 Дерево забанено или отправлено не туда! "Защита от дурака" сработала — активы перенесены на Серое Дерево.');card.style.transform = "translateX(0)";trees[activeTreeIndex].name = "🔒 Серое Дерево (Активы спасены в Эскроу)";updateTreeUI();}, 300);}function triggerNfc() {alert("📟 NFC запущен. Электронный ордер верифицирован, замок IoT Smart-Lock шелтера открыт.");}function triggerSos() {isSosMode = true;detoxTime += 7200;document.getElementById('tree-icon').innerText = "📡";alert("🚨 РЕЖИМ ЧП: Начислено +2 часа, запущен бесплатный трекер Хлебных Крошек (Pulse Alert) для поиска ребенка/кошки!");}function openCharity() {alert("🕊️ Шаг 1/2: Вы перешли в каталог Деревьев Благотворительности. Нажмите на следующем шаге 'Полить' для доната под 0% комиссии.");}function printQR() {alert("🖨️ Шаг 1/2: Генерация инвойса. Нажмите ОК, чтобы выгрузить векторный QR-код в AirPrint/PDF для визиток или оплаты детского транспорта.");}function toggleInheritance() {var chk = document.getElementById('inherit-check').checked;if (chk) {var dest = confirm("Направить активы Близким после смерти? (Нажмите Отмена, чтобы направить в Фонд)");alert("Система наследования (Dead Man's Switch) активирована для: " + (dest ? "Близкие родственники" : "Благотворительный фонд"));}}function triggerAudioVerification() {alert("🎙️ Ошибка голоса (2 попытки сгорели). Автоматический сброс в текстовый режим.");var txt = prompt("💡 Подсказка из скинов активна!\nВведите секретный код из головы текстом вручную:");if (txt) {if (trees[activeTreeIndex].stage < 4) trees[activeTreeIndex].stage++;updateTreeUI();alert("🌸 Код подошел! Дерево полито и перешло на стадию +1.");}}
+            { name: "Семечка (Посадите дерево)", cat: "classic", stage: 0, funds: 0, icon: "🥚" },
+            { name: "Классика №12 (Бонсай Элит)", cat: "classic", stage: 1, funds: 150, icon: "🌱" },
+            { name: "Семейное: Ремонт Квартиры", cat: "family", stage: 1, funds: 400, icon: "🌱" },
+            { name: "Семейное: Ветеринар для Кошки", cat: "family", stage: 1, funds: 80, icon: "🌱" },
+            { name: "Семейное: Рождение Ребенка", cat: "family", stage: 2, funds: 600, icon: "🌿" },
+            { name: "Бизнес: Тату-Салон (Мультишаг)", cat: "multistep", stage: 1, funds: 300, icon: "🌱" },
+            { name: "Кикстартер: Музыкальный Альбом", cat: "kickstarter", stage: 1, funds: 1200, icon: "🌱" },
+{ name: "Благотворительность: Сбор на Шелтер", cat: "charity-public", stage: 1, funds: 500, icon: "🌱" }];setInterval(function() {if (detoxTime > 0 && !isSosMode) {detoxTime--;var h = Math.floor(detoxTime / 3600);var m = Math.floor((detoxTime % 3600) / 60);var s = detoxTime % 60;var hStr = h < 10 ? '0' + h : h;var mStr = m < 10 ? '0' + m : m;var sStr = s < 10 ? '0' + s : s;document.getElementById('timer-display').innerText = '⌛ ' + hStr + ':' + mStr + ':' + sStr;}}, 1000);function changeTree(dir) {activeTreeIndex = (activeTreeIndex + dir + trees.length) % trees.length;updateTreeUI();}function updateTreeUI() {var t = trees[activeTreeIndex];document.getElementById('tree-name').innerText = t.name;document.getElementById('tree-escrow').innerText = 'Баланс Эскроу: ' + t.funds + ' USDT';var st = 'Стадия ' + t.stage + ': ';if (t.stage == 0) { t.icon = "🥚"; st += "Семечка"; }if (t.stage == 1) { t.icon = "🌱"; st += "Росток"; }if (t.stage == 2) { t.icon = "🌿"; st += "Молодой бонсай"; }if (t.stage == 3) { t.icon = "🌸"; st += "Цветущее дерево"; }if (t.stage >= 4) { t.icon = "👑"; st += "Золотой финал (Вечный Сад)"; }document.getElementById('tree-icon').innerText = t.icon;document.getElementById('tree-stage-text').innerText = st;}function toggleBlur(show) {document.getElementById('blur-overlay').style.display = show ? 'flex' : 'none';}function mockAuth(prov) {document.getElementById('auth-status').innerText = 'Статус входа: Авторизован через [ ' + prov + ' ]';alert('Шаг 1/2: Авторизация пройдена. Нажмите ОК для генерации ключа сессии.');}function processTransfer(type, isFamily) {if (isFamily) {alert('Шаг 1/2: Реквизиты проверены. Введите секретный код на следующем шаге для безлимитной отправки Семье.');} else {if (strangerTransfersCount < 3) {strangerTransfersCount++;document.getElementById('stranger-count').innerText = strangerTransfersCount;alert('Шаг 1/2: Создан Смарт-Инвойс для незнакомца (сбор 1% учтен). Нажмите ОК для активации шага 2.\nЛимиты суток: ' + strangerTransfersCount + '/3');} else {alert('❌ Превышен лимит! Незнакомцам можно отправлять максимум 3 раза в сутки.');}}}function triggerRefund() {var t = trees[activeTreeIndex];if (t.stage >= 4) {alert('Ошибка защиты от дурака: Контракт уже закрыт и перемещен в Вечный Сад.');return;}var refund = t.funds;if (t.cat === "multistep") {refund = (t.funds - (t.funds * 0.1)) * (1 - (t.stage / 3));alert('Защита от дурака: Контракт расторгнут. 10% невозвратного залога ушло мастеру за работу. Остаток ' + refund + ' USDT возвращен.');} else {alert('Защита от дурака: Контракт расторгнут под 0% комиссии. Вся сумма ' + refund + ' USDT спасена и вернулась к вам.');}t.funds = 0;t.stage = 0;updateTreeUI();}function triggerAdminMask() {adminClicks++;if (adminClicks >= 3) {var m = prompt("Пароль маски (1 - Помощник, 2 - Создатель):");var ind = document.getElementById('mask-indicator');if (m === "1") {ind.style.display = "block"; ind.innerText = "🔵 АКТИВИРОВАНА МАСКА: ПОМОЩНИК";document.getElementById('creator-section').style.display = "none";} else if (m === "2") {ind.style.display = "block"; ind.innerText = "🔴 АКТИВИРОВАНА МАСКА: СОЗДАТЕЛЬ (ПЛАН Ф)";document.getElementById('creator-section').style.display = "block";}adminClicks = 0;}}function triggerSwipeLeft() {var card = document.getElementById('bonsai-card');card.style.transform = "translateX(-150%)";setTimeout(function() {alert('🚀 "Защита от дурака" сработала — контракт принудительно аннулирован, активы перенесены на Серое Дерево.');card.style.transform = "translateX(0)";trees[activeTreeIndex].name = "🔒 Серое Дерево (Активы спасены в Эскроу)";updateTreeUI();}, 300);}function triggerNfc() {alert("📟 Шаг 1/2: NFC-модуль активирован. Поднесите часы для считывания электронного ордера на ночлег.");}function triggerSos() {isSosMode = true;detoxTime += 7200;document.getElementById('tree-icon').innerText = "📡";alert("🚨 РЕЖИМ ЧП (План ЧП): Начислено +2 часа экранного времени, запущен бесплатный трекер Хлебных Крошек (Pulse Alert).");}function openCharity() {alert("🕊️ Шаг 1/2: Переход в каталог Благотворительности. Нажмите 'Полить' на следующем шаге для отправки без комиссий (0%).");}function printQR() {alert("🖨️ Шаг 1/2: Инвойс подготовлен. Нажмите ОК для выгрузки вектора в PDF/AirPrint для визиток или детского транспорта.");}function toggleInheritance() {var chk = document.getElementById('inherit-check').checked;if (chk) {var dest = confirm("Направить активы Близким после смерти? (Нажмите Отмена, чтобы выбрать Фонд)");alert("Система наследования (Dead Man's Switch) включена для: " + (dest ? "Близкие родственники" : "Благотворительный фонд"));}}function triggerAudioVerification() {alert("🎙️ Ошибка голоса (2 попытки сгорели). Система заставляет ввести текст вручную.");var txt = prompt("💡 Подсказка из скинов активна!\nВведите секретный код из головы текстом вручную:");if (txt) {if (trees[activeTreeIndex].stage < 4) trees[activeTreeIndex].stage++;updateTreeUI();alert("🌸 Код подошел! Дерево полито и перешло на стадию +1.");}}
