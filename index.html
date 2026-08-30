@@ -1,265 +1,222 @@
-dart// ==========================================
-// НАЧАЛО ФАЙЛА: main.dart
-// ПРОЕКТ: КРИПТОСАД (THE ECOSYSTEM HUB) v3.1
-// ==========================================
+html<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Криптосад</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        /* Брандмауэр ПК-блэкаута */
+        #pc-blocker {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100vw; height:100vh;
+            background: #000; z-index: 10000;
+            justify-content: center; align-items: center;
+            text-align: center; padding: 24px; box-sizing: border-box;
+        }
+        /* Шапка индикаторов */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        .global-counter { color: #00ffcc; }
+        .detox-timer { color: #ff6b00; }
+        .creator-trigger { width: 30px; height: 30px; background: transparent; cursor: pointer; }
 
-import 'dart:async';
-import 'dart:math';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+        /* Центральная сцена Бонсай (свайпы симулируются) */
+        .bonsai-stage {
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .bonsai-icon { font-size: 48px; margin: 12px 0; transition: transform 0.3s; }
+        .bonsai-name { font-weight: bold; font-size: 16px; }
+        .bonsai-desc { font-size: 12px; color: #888; margin-top: 4px; }
 
-void main() {
-  runApp(const CryptoGardenApp());
-}
+        /* Категории и Кнопки в стиле Телеграм плиток */
+        .tg-category {
+            color: #00ffcc;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin: 16px 0 6px 4px;
+            text-transform: uppercase;
+        }
+        .tg-button {
+            background: rgba(28, 28, 30, 0.9);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            transition: background 0.2s;
+        }
+        .tg-button:active { background: rgba(44, 44, 46, 0.9); }
+        .tg-arrow { color: #555; font-size: 14px; }
 
-class CryptoGardenApp extends StatelessWidget {
-  const CryptoGardenApp({Key? key}) : super(key: key);
+        /* Нижний таббар */
+        .bottom-bar {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-around;
+            padding-top: 10px;
+        }
+        .tab-icon { font-size: 22px; cursor: pointer; opacity: 0.6; }
+        .tab-icon:hover { opacity: 1; }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Криптосад',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark, scaffoldBackgroundColor: Colors.black),
-      home: const AntiDesktopFirewall(child: EcosystemHubScreen()),
-    );
-  }
-}
+        /* Всплывающий камуфляжный блюр */
+        #blur-overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.96);
+            z-index: 9999;
+            justify-content: center; align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
 
-// ============================================================================
-// 1. ЭФЕМЕРНАЯ ПАМЯТЬ, ЛИМИТЫ И СЕССИЯ (AUTO-DELETE VAULT)
-// ============================================================================
+    <!-- Защита от ПК -->
+    <div id="pc-blocker">
+        <div>
+            <div style="font-size: 60px; color: #ff0055;">⚠️</div>
+            <h2 style="letter-spacing: 2px;">СИСТЕМНЫЙ БЛЭКАУТ</h2>
+            <p style="color: #888; font-size: 14px;">Вход с ПК заблокирован. Требуется мобильный тач-скрин.</p>
+        </div>
+    </div>
 
-enum TreeCategory { charity, influencer, couple, multiStepPrivate, familyNeed, timeCapsule10Years }
-enum AdminMask { user, companion, creator }
-enum InheritanceTarget { familyMember, charityFund }
+    <!-- Камуфляж -->
+    <div id="blur-overlay" onclick="toggleBlur(false)">
+        <div>
+            <div style="font-size: 50px;">🔒</div>
+            <h3 style="letter-spacing: 1px;">КАМУФЛЯЖ АКТИВЕН</h3>
+            <p style="color: #888; font-size: 12px;">Тапните в любом месте для отмены</p>
+        </div>
+    </div>
 
-class EphemeralVault with WidgetsBindingObserver {
-  static final EphemeralVault _instance = EphemeralVault._internal();
-  factory EphemeralVault() => _instance;
-  EphemeralVault._internal() { WidgetsBinding.instance.addObserver(this); }
+    <!-- Основной интерфейс -->
+    <div class="top-bar">
+        <div class="global-counter" id="total-counter">🌱 Всего выращено: 1,430</div>
+        <div class="detox-timer" id="timer-display">⌛ 02:00:00</div>
+        <div class="creator-trigger" onclick="triggerAdminMask()"></div>
+    </div>
 
-  final List<String> familyList = ["Мама Кошелек", "Брат Кошелек"]; 
-  final List<String> friendsList = ["Друг Криптофан", "Сосед ИТ"];
-  final Set<String> dailyStrangersTransfers = {};
-  final int maxStrangersPerDay = 3;
+    <div style="text-align: center; font-size: 11px; color: #ff6b00; display: none;" id="mask-indicator"></div>
 
-  bool isAuth = false;
-  String authProvider = "Нет";
+    <!-- Сцена Бонсай с поддержкой свайпов -->
+    <div class="bonsai-stage" id="bonsai-card">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <span style="cursor:pointer;" onclick="changeTree(-1)">◀</span>
+            <span class="bonsai-name" id="tree-name">Классический Бонсай Элит</span>
+            <span style="cursor:pointer;" onclick="changeTree(1)">▶</span>
+        </div>
+        <div class="bonsai-icon" id="tree-icon">🌱</div>
+        <div id="tree-stage-text" style="font-size:13px; font-weight:bold;">Стадия 1: Росток</div>
+        <div class="bonsai-desc" id="tree-escrow">Баланс Эскроу: 150 USDT</div>
+        
+        <div style="margin-top: 8px; font-size: 12px;">
+            <input type="checkbox" id="inherit-check" onchange="toggleInheritance()"> Наследовать активы
+        </div>
+        <div id="refund-btn-container" style="margin-top:8px;">
+            <button onclick="triggerRefund()" style="background: none; border: none; color: #ffbc00; font-size: 11px; cursor: pointer; text-decoration: underline;">Отозвать контракт и вернуть 100% средств</button>
+        </div>
+    </div>
 
-  void purgeAllData() {
-    dailyStrangersTransfers.clear();
-    isAuth = false;
-    authProvider = "Нет";
-    debugPrint("🚨 [КРИПТОСАД] Сессия закрыта. Все данные стерты из RAM.");
-  }
+    <!-- Кнопки в стиле Телеграм -->
+    <div style="flex: 1; overflow-y: auto;">
+        <div class="tg-category">🔐 Авторизация и Данные</div>
+        <div class="tg-button" onclick="mockAuth('Telegram')"><span>🔑 Войти через Telegram</span><span class="tg-arrow">▶</span></div>
+        <div class="tg-button" onclick="mockAuth('Steam')"><span>🎮 Войти через Steam OpenID</span><span class="tg-arrow">▶</span></div>
+        <div class="tg-button" onclick="mockAuth('Discord')"><span>💬 Войти через Discord / Спутник</span><span class="tg-arrow">▶</span></div>
+        <div style="font-size:11px; color:#666; padding-left:4px;" id="auth-status">Статус входа: Нет сессии</div>
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) purgeAllData();
-  }
+        <div class="tg-category">👥 Социальные лимиты и Переводы</div>
+        <div class="tg-button" onclick="processTransfer('Семья', true)"><span>🟣 СЕМЬЯ / ДРУЗЬЯ (Безлимит)</span><span class="tg-arrow">▶</span></div>
+        <div class="tg-button" onclick="processTransfer('Незнакомец', false)"><span>🔘 НЕЗНАКОМЦЫ (<span id="stranger-count">0</span>/3 в сутки)</span><span class="tg-arrow">▶</span></div>
 
-  bool verifyAndRegisterTransfer(String address, bool isFamilyOrFriend) {
-    if (isFamilyOrFriend) return true;
-    if (dailyStrangersTransfers.contains(address)) return true;
-    if (dailyStrangersTransfers.length < maxStrangersPerDay) {
-      dailyStrangersTransfers.add(address);
-      return true;
-    }
-    return false;
-  }
-}
+        <div class="tg-category">⚙️ Смарт-контракты и Печать</div>
+        <div class="tg-button" onclick="openCharity()"><span>🕊️ БЛАГОТВОРИТЕЛЬНОСТЬ (0% комиссии)</span><span class="tg-arrow">▶</span></div>
+        <div class="tg-button" onclick="printQR()"><span>📇 РАСПЕЧАТАТЬ QR-ИНВОЙС (Визитки/Транспорт)</span><span class="tg-arrow">▶</span></div>
+        <div class="tg-button" onclick="triggerNfc()"><span>📟 БЕСКОНТАКТНЫЙ СЧИТЫВАТЕЛЬ NFC</span><span class="tg-arrow">▶</span></div>
+        
+        <div id="creator-section" style="display: none;">
+            <div class="tg-category" style="color: #ff0055;">🛰️ План Ф (Создатель)</div>
+            <div class="tg-button" style="border: 1px solid #ff0055;" onclick="alert('План Ф: Впрыск муниципального гранта под 0%')"><span>🚨 ПРЯМАЯ БЮДЖЕТНАЯ ИНТЕРВЕНЦИЯ</span><span class="tg-arrow">▶</span></div>
+        </div>
+    </div>
 
-// ============================================================================
-// 2. БРАНДМАУЭР ПК-БЛЭКАУТА (ANTI-DESKTOP FIREWALL)
-// ============================================================================
+    <!-- Нижний таббар -->
+    <div class="bottom-bar">
+        <span class="tab-icon" onclick="toggleBlur(true)" title="Проверить Блюр">👁️‍🗨️</span>
+        <span class="tab-icon" onclick="triggerSwipeLeft()" title="Кинуть свайпом">🚀</span>
+        <span class="tab-icon" onclick="triggerAudioVerification()" title="Голосовой код">🎙️</span>
+        <span class="tab-icon" onclick="triggerSos()" title="СОС Радар">🚨</span>
+    </div>
 
-class AntiDesktopFirewall extends StatelessWidget {
-  final Widget child;
-  const AntiDesktopFirewall({Key? key, required this.child}) : super(key: key);
+    <script>
+        // Проверка ПК
+        if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            document.getElementById('pc-blocker').style.display = 'flex';
+        }
 
-  @override
-  Widget build(BuildContext context) {
-    if (kIsWeb || Theme.of(context).platform == TargetPlatform.windows || Theme.of(context).platform == TargetPlatform.macOS) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.gpp_bad_outlined, color: Color(0xFFFF0055), size: 90),
-              SizedBox(height: 24),
-              Text("⚠️ СИСТЕМНЫЙ БЛЭКАУТ", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 3)),
-              SizedBox(height: 16),
-              Text("Вход с ПК заблокирован. Требуется мобильный тач-скрин.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-            ],
-          ),
-        ),
-      );
-    }
-    return child;
-  }
-}
-
-// ============================================================================
-// 3. МОДЕЛЬ ДЕРЕВА, ЭСКРОУ И ЛОГИКА МУТАЦИИ В СЕРОЕ ДЕРЕВО
-// ============================================================================
-
-class CryptoTreeContract {
-  final String id;
-  String name;
-  final TreeCategory category;
-  int currentStage; 
-  double balanceLocked;
-  bool isBanned; 
-  bool isInheritanceEnabled; 
-  InheritanceTarget? inheritanceTarget;
-  final DateTime? capsuleReleaseDate; 
-
-  CryptoTreeContract({
-    required this.id, required this.name, required this.category,
-    this.currentStage = 1, required this.balanceLocked, this.isBanned = false,
-    this.isInheritanceEnabled = false, this.inheritanceTarget, this.capsuleReleaseDate,
-  });
-
-  bool get isGreyState => isBanned;
-
-  void forceToGreyContract() {
-    isBanned = true;
-    name = "🔒 Серое Дерево (Активы спасены в Эскроу)";
-  }
-
-  double calculateRefundAmount() {
-    if (currentStage >= 4) return 0.0;
-    if (category == TreeCategory.multiStepPrivate) {
-      double nonRefundableDeposit = balanceLocked * 0.10; // 10% невозвратный залог мастера
-      return (balanceLocked - nonRefundableDeposit) * (1.0 - (currentStage / 3.0));
-    }
-    return balanceLocked; // 100% возврат (минус 1% аннулируется)
-  }
-}
-
-// ============================================================================
-// 📱 ЭКРАН 1: ГЛОБАЛЬНЫЙ ГЛАВНЫЙ ЭКРАН (ИНТЕРФЕЙС КНОПОК ТЕЛЕГРАМА)
-// ============================================================================
-
-class EcosystemHubScreen extends StatefulWidget {
-  const EcosystemHubScreen({Key? key}) : super(key: key);
-  @override
-  State<EcosystemHubScreen> createState() => _EcosystemHubScreenState();
-}
-
-class _EcosystemHubScreenState extends State<EcosystemHubScreen> {
-  final EphemeralVault _vault = EphemeralVault();
-  
-  bool _isCamouflageBlurred = false;
-  AdminMask _currentMask = AdminMask.user;
-  int _detoxSecondsLeft = 7200; 
-  bool _isDetoxBlockActive = false;
-  bool _isSosRadarActive = false;
-
-  late List<CryptoTreeContract> _myTrees;
-  int _activeTreeIndex = 0;
-
-  // Логика скинов и 60-секундного таймера стелс-подсказки
-  int _skinSecondsLooked = 0;
-  Timer? _skinTimer;
-  bool _hasSecretHintUnlocked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initDemoTrees();
-    _startDetoxCountdown();
-  }
-
-  void _initDemoTrees() {
-    _myTrees = [
-      CryptoTreeContract(id: "1", name: "Классический Бонсай Элит", category: TreeCategory.influencer, balanceLocked: 150.0),
-      CryptoTreeContract(id: "2", name: "Семейный Фонд на Отпуск (Совместный)", category: TreeCategory.familyNeed, balanceLocked: 500.0),
-      CryptoTreeContract(id: "3", name: "Мой Мультишаг: Сделать Тату (10% залог)", category: TreeCategory.multiStepPrivate, balanceLocked: 300.0),
-      CryptoTreeContract(id: "4", name: "Капсула времени: Сын-2036 (Отложено на 10 лет)", category: TreeCategory.timeCapsule10Years, balanceLocked: 1000.0, capsuleReleaseDate: DateTime(2036, 1, 1)),
-    ];
-  }
-
-  void _startDetoxCountdown() {
-    Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
-      if (!_isSosRadarActive && _detoxSecondsLeft > 0) {
-        setState(() {
-          _detoxSecondsLeft--;
-          if (_detoxSecondsLeft <= 0) _isDetoxBlockActive = true;
+        // Автоудаление данных сессии при закрытии вкладки или уходе в фон
+        window.addEventListener('pagehide', () => {
+            localStorage.clear();
+            sessionStorage.clear();
         });
-      }
-    });
-  }
 
-  void _startSkinTracking() {
-    _skinTimer?.cancel();
-    _skinSecondsLooked = 0;
-    _skinTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
-      _skinSecondsLooked++;
-      if (_skinSecondsLooked >= 60 && !_hasSecretHintUnlocked) {
-        setState(() { _hasSecretHintUnlocked = true; });
-        timer.cancel();
-      }
-    });
-  }
+        // База данных в оперативной памяти (Переменные обнуляются при перезагрузке страницы)
+        let strangerTransfersCount = 0;
+        let activeTreeIndex = 0;
+        let detoxTime = 7200;
+        let isSosMode = false;
+        let adminClicks = 0;
 
-  @override
-  void dispose() {
-    _skinTimer?.cancel();
-    super.dispose();
-  }
+        const trees = [
+            { name: "Классический Бонсай Элит", cat: "influencer", stage: 1, funds: 150, icon: "🌱" },
+            { name: "Семейный Фонд на Отпуск (Совместный)", cat: "family", stage: 1, funds: 500, icon: "🌱" },
+            { name: "Мой Мультишаг: Сделать Тату", cat: "multistep", stage: 1, funds: 300, icon: "🌱" },
+            { name: "Капсула времени: Сын-2036", cat: "capsule", stage: 1, funds: 1000, icon: "🌱" }
+        ];
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isDetoxBlockActive) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.hourglass_disabled, color: Colors.orange, size: 80),
-              const SizedBox(height: 24),
-              const Text("⌛ ДЕТОКС-БЛОКИРОВКА", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              const Text("Сессия лимита вышла. Возвращайся к кошке.", textAlign: TextAlign.center),
-              TextButton(onPressed: () => setState(() { _detoxSecondsLeft = 60; _isDetoxBlockActive = false; }), child: const Text("Сбросить демо")),
-            ],
-          ),
-        ),
-      );
-    }
+        // Таймер детокса
+        setInterval(() => {
+            if (detoxTime > 0 && !isSosMode) {
+                detoxTime--;
+                let h = Math.floor(detoxTime / 3600).toString().padLeft(2, '0');
+                let m = Math.floor((detoxTime % 3600) / 60).toString().padLeft(2, '0');
+                let s = (detoxTime % 60).toString().padLeft(2, '0');
+                document.getElementById('timer-display').innerText = `⌛ ${h}:${m}:${s}`;
+                if (detoxTime <= 0) alert("Детокс-таймер исчерпан! Закройте софт и идите к кошке.");
+            }
+        }, 1000);
 
-    CryptoTreeContract currentTree = _myTrees[_activeTreeIndex];
-
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(14.0),
-              child: Column(
-                children: [
-                  // ВЕРХНЯЯ ИНФО-ПАНЕЛЬ
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("🌱 Всего выращено: 1,430", style: TextStyle(color: Color(0xff00ffcc), fontWeight: FontWeight.bold)),
-                      Text("⌛ ${(_detoxSecondsLeft ~/ 3600).toString().padLeft(2, '0')}:${((_detoxSecondsLeft % 3600) ~/ 60).toString().padLeft(2, '0')}:${(_detoxSecondsLeft % 60).toString().padLeft(2, '0')}", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                      GestureDetector(onLongPress: _activateAdminSwitch, child: Container(width: 35, height: 35, color: Colors.transparent)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  if (_currentMask != AdminMask.user)
-                    Text(_currentMask == AdminMask.companion ? "🔵 МАСКА: ПОМОЩНИК" : "🔴 МАСКА: СОЗДАТЕЛЬ (ПЛАН Ф)", style: const TextStyle(fontSize: 11, color: Colors.amber)),
-                  
-                  // СЦЕНА БОНСАЙ С ПОДДЕРЖКОЙ СВАЙПОВ СЛЕВА-НАПРАВО ДЛЯ ОТПРАВКИ
-                  const SizedBox(height: 15),
-                  Dismissible(
-                    key: Key(currentTree.id),
-                    direction: DismissDirection.horizontal,
-                    onDismissed: (direction) {
-ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🚀 Дерево '${currentTree.name}' успешно отправлено свайпом!")));_initDemoTrees();},background: Container(color: Colors.green.withOpacity(0.2), child: const Icon(Icons.send, color: Colors.green)),child: _buildBonsaiDisplay(currentTree),),// ТЕЛЕГРАМ-СТИЛЬ: АВТО-РЕНДЕРИНГ ТЕКСТОВЫХ КНОПОКconst SizedBox(height: 15),Expanded(child: ListView(children: [_tgCategoryHeader("🔐 АВТОРИЗАЦИЯ И ДАННЫЕ"),_tgButton("🔑 Войти через Telegram", () => _mockAuth("Telegram")),_tgButton("🎮 Войти через Steam OpenID", () => _mockAuth("Steam")),_tgButton("💬 Войти через Discord / Спутник", () => _mockAuth("Discord")),Text("   Текущий статус входа: [ ${_vault.authProvider} ]", style: const TextStyle(color: Colors.grey, fontSize: 12)),_tgCategoryHeader("👥 СОЦИАЛЬНЫЕ ЛИМИТЫ И ПЕРЕВОДЫ"),_tgButton("🟣 СЕМЬЯ (Безлимит транзакций)", () => _processTransferScenario("Кошелек Семьи", true)),_tgButton("🔘 НЕЗНАКОМЦЫ (Макс 3 в сутки: ${_vault.dailyStrangersTransfers.length}/3)", () => _processTransferScenario("0xНезнакомец${Random().nextInt(100)}", false)),_tgCategoryHeader("⚙️ СМАРТ-КОНТРАКТЫ И ЭСКРОУ"),_tgButton("🕊️ БЛАГОТВОРИТЕЛЬНОСТЬ (Мгновенный переход)", _showCharityInvoiceDialog),_tgButton("📇 РАСПЕЧАТАТЬ QR (Визитки / Транспорт / Чаевые)", _showPrintInvoiceScreen),_tgButton("📟 БЕСКОНТАКТНЫЙ СЧИТЫВАТЕЛЬ NFC", _triggerNfcReader),_tgCategoryHeader("🎭 КАТАЛОГ СКИНОВ И СКРЫТЫЙ СТЕЛС"),_tgButton("🌸 Открыть скин 'Сакура' (Секретный таймер)", () {_startSkinTracking();_showSkinTimerDialog();}),if (_currentMask == AdminMask.creator) ...[_tgCategoryHeader("🛰️ УПРАВЛЕНИЕ СОЗДАТЕЛЯ (ПЛАН Ф)"),_tgButton("🚨 ПРЯМАЯ БЮДЖЕТНАЯ ИНТЕРВЕНЦИЯ", () {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("План Ф: Впрыск гранта в обход чиновников")));}),]],),),// НИЖНИЙ СТАНДАРТНЫЙ ТАББАР_buildBottomTabBar(),],),),if (_isCamouflageBlurred) _buildCamouflageOverlay(),],),),);}Widget _tgCategoryHeader(String title) {return Padding(padding: const EdgeInsets.only(top: 12, bottom: 4, left: 4), child: Text(title, style: const TextStyle(color: Color(0xff00ffcc), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)));}Widget _tgButton(String label, VoidCallback onTap) {return Card(color: Colors.grey.shade900.withOpacity(0.8),margin: const EdgeInsets.symmetric(vertical: 3),shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),child: ListTile(title: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)), trailing: const Icon(Icons.chevron_right, size: 16), dense: true, onTap: onTap),);}Widget _buildBonsaiDisplay(CryptoTreeContract tree) {return Container(width: double.infinity, padding: const EdgeInsets.all(12),decoration: BoxDecoration(color: Colors.grey.shade900.withOpacity(0.4), borderRadius: BorderRadius.circular(12), border: Border.all(color: tree.isGreyState ? Colors.grey : const Color(0xff00ffff).withOpacity(0.2))),child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [IconButton(icon: const Icon(Icons.arrow_back_ios, size: 14), onPressed: () => setState(() { _activeTreeIndex = (_activeTreeIndex - 1) % _myTrees.length; })),Expanded(child: Text(tree.name, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: tree.isGreyState ? Colors.grey : Colors.white))),IconButton(icon: const Icon(Icons.arrow_forward_ios, size: 14), onPressed: () => setState(() { _activeTreeIndex = (_activeTreeIndex + 1) % _myTrees.length; })),],),const SizedBox(height: 8),_isSosRadarActive? const Icon(Icons.radar, color: Color(0xFFFF0055), size: 40): Text(tree.isGreyState ? "🔘" : (tree.currentStage == 1 ? "🌱" : tree.currentStage == 2 ? "🌿" : tree.currentStage == 3 ? "🌸" : "👑"), style: const TextStyle(fontSize: 36)),const SizedBox(height: 6),Text("Баланс Эскроу: ${tree.balanceLocked} USDT | Скин-блокировка: нажми отмену ниже если скин забанен", style: const TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center),Row(mainAxisAlignment: MainAxisAlignment.center,children: [Checkbox(value: tree.isInheritanceEnabled, activeColor: const Color(0xff00ffcc), onChanged: (val) {setState(() { tree.isInheritanceEnabled = val ?? false; if (tree.isInheritanceEnabled) _showInheritanceDialog(tree); });}),const Text("Передать по Наследству (галочка)", style: TextStyle(fontSize: 12)),],),if (tree.currentStage < 4)TextButton(onPressed: () {double r = tree.calculateRefundAmount();ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("💰 Контракт расторгнут. Возвращено $r USDT под 0% (1% сбора обнулен)")));setState(() { tree.balanceLocked = 0; tree.currentStage = 1; });},child: Text("Отозвать контракт и забрать деньги (${tree.calculateRefundAmount()} USDT)", style: const TextStyle(color: Colors.amber, fontSize: 11)),)],),);}Widget _buildBottomTabBar() {return Row(mainAxisAlignment: MainAxisAlignment.spaceAround,children: [IconButton(icon: const Icon(Icons.blur_on, color: Colors.white54), onPressed: () => setState(() => _isCamouflageBlurred = true)),IconButton(icon: const Icon(Icons.touch_app, color: Color(0xff00ffff)), tooltip: 'Секретный клик админа', onPressed: () {setState(() { if (_myTrees[_activeTreeIndex].currentStage < 4) _myTrees[_activeTreeIndex].currentStage++; });ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("⚡ Садовник активировал ручной клик: Стадия +1")));}),IconButton(icon: const Icon(Icons.keyboard_voice, color: Colors.amber), onPressed: _showAudioVerificationDialog),IconButton(icon: const Icon(Icons.crisis_alert, color: Color(0xFFFF0055)), onPressed: _triggerSosEmergencyRadar),],);}// ============================================================================// ЛОГИКА ДИАЛОГОВ И МЕХАНИК ВЗАИМОДЕЙСТВИЯ// ============================================================================void _mockAuth(String provider) {setState(() { _vault.isAuth = true; _vault.authProvider = provider; });ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🔑 Авторизация успешна через $provider (Контакты не синхронизируются)")));}void _triggerNfcReader() {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("📟 Сканирование NFC волны... Оплата транспорта / Открытие замка IoT шелтера верифицировано")));}void _activateAdminSwitch() {showDialog(context: context, builder: (context) => AlertDialog(title: const Text("🎭 Админ-маска камуфляжа"),actions: [TextButton(onPressed: () { setState(() => _currentMask = AdminMask.user); Navigator.pop(context); }, child: const Text("Обычный")),TextButton(onPressed: () { setState(() => _currentMask = AdminMask.companion); Navigator.pop(context); }, child: const Text("Помощник")),TextButton(onPressed: () { setState(() => _currentMask = AdminMask.creator); Navigator.pop(context); }, child: const Text("Создатель")),],));}void _processTransferScenario(String target, bool isFamily) {if (_vault.verifyAndRegisterTransfer(target, isFamily)) {showDialog(context: context, builder: (context) => AlertDialog(title: const Text("🧾 Смарт-Инвойс"),content: Text("Целевой адрес: $target\n\nИнфраструктурный сбор 1% учтен на входе. При бане скина или отмене деньги падают в Серое Дерево (возврат 100%)."),actions: [TextButton(onPressed: () { Navigator.pop(context); _showPrintInvoiceScreen(); }, child: const Text("ПЕЧАТЬ QR")),TextButton(onPressed: () => Navigator.pop(context), child: const Text("ОК"))],));} else {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Лимит исчерпан! Незнакомцам можно слать максимум 3 раза в сутки."), backgroundColor: Color(0xFFFF0055)));}}void _showInheritanceDialog(CryptoTreeContract tree) {showDialog(context: context, builder: (context) => AlertDialog(title: const Text("⚙️ Настройка Наследования"),content: const Text("Куда автоматически отправить зашифрованные активы эскроу в случае отсутствия активности?"),actions: [TextButton(onPressed: () { tree.inheritanceTarget = InheritanceTarget.familyMember; Navigator.pop(context); }, child: const Text("Близким в Семью")),TextButton(onPressed: () { tree.inheritanceTarget = InheritanceTarget.charityFund; Navigator.pop(context); }, child: const Text("В Фонд Благотворительности")),],));}void _showSkinTimerDialog() {showDialog(context: context, builder: (context) => StatefulBuilder(builder: (context, setDialogState) {Timer.periodic(const Duration(seconds: 1), (t) { if (context.mounted) setDialogState(() {}); else t.cancel(); });return AlertDialog(title: const Text("🌸 Скин Сакуры"),content: Column(mainAxisSize: MainAxisSize.min,children: [Text("Провисено времени на экране: $_skinSecondsLooked / 60 сек."),const SizedBox(height: 10),if (_hasSecretHintUnlocked)const Text("💡 ПОДСКАЗКА РАЗБЛОКИРОВАНА: Секретное слово связано со скином дерева Сакуры, код лежит только в твоей голове!", style: TextStyle(color: Colors.greenAccent))elseconst Text("Не уходите с экрана 1 минуту, чтобы материализовать подсказку секретного слова.", style: TextStyle(color: Colors.grey, fontSize: 12))],),actions: [TextButton(onPressed: () { _skinTimer?.cancel(); Navigator.pop(context); }, child: const Text("Закрыть"))],);}));}void _triggerSosEmergencyRadar() {setState(() { _isSosRadarActive = true; _detoxSecondsLeft += 7200; });ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 РЕЖИМ ЧП: Начислено +2 часа к детоксу, активирован бесплатный трекер 'Хлебных Крошек' для поиска кошки / ребенка."), backgroundColor: Color(0xFFFF0055)));}void _showCharityInvoiceDialog() {showDialog(context: context, builder: (context) => AlertDialog(title: const Text("🕊️ Благотворительные Деревья"),content: const Text("Донаты 0% комиссии летят напрямую на адреса проверенных фондов созидания."),actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("Полить (Донат 0%)")), TextButton(onPressed: () => Navigator.pop(context), child: const Text("Закрыть"))],));}void _showPrintInvoiceScreen() { Navigator.push(context, MaterialPageRoute(builder: (context) => const PrintInvoiceScreen())); }void _showAudioVerificationDialog() {int voiceAttempts = 5; int textAttempts = 3; bool forceText = false;showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.grey.shade900, builder: (context) {return StatefulBuilder(builder: (context, setModalState) {return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 16),child: Column(mainAxisSize: MainAxisSize.min,children: [const Text("🔓 Дешифровка слова из головы"),const SizedBox(height: 10),if (!forceText) ...[Text("Голосовые попытки: $voiceAttempts", style: const TextStyle(color: Colors.amber)),ElevatedButton(onPressed: () => setModalState(() { voiceAttempts--; if (voiceAttempts <= 3) forceText = true; }), child: const Text("Произнести кодовое слово")),] else ...[const Text("⚠️ Введите текст вручную (2 ошибки голоса)", style: TextStyle(color: Colors.redAccent)),if (_hasSecretHintUnlocked) const Text("💡 Подсказка из скинов активна!", style: TextStyle(color: Colors.green)),TextField(decoration: InputDecoration(hintText: "Ввод текста (Попыток: $textAttempts)")),],const SizedBox(height: 24),],),);});});}Widget _buildCamouflageOverlay() {return Positioned.fill(child: GestureDetector(onTap: () => setState(() => _isCamouflageBlurred = false), child: Container(color: Colors.black.withOpacity(0.96), child: const Center(child: Text("🔒 КАМУФЛЯЖ АКТИВЕН\nТапните для отмены размытия", textAlign: TextAlign.center)))));}}// ============================================================================// 💎 ЭКРАН 3: ГЕНЕРАЦИЯ QR ДЛЯ ВИЗИТОК И МЕРЧА ОПЛАТЫ// ============================================================================class PrintInvoiceScreen extends StatelessWidget {const PrintInvoiceScreen({Key? key}) : super(key: key);@overrideWidget build(BuildContext context) {return Scaffold(appBar: AppBar(title: const Text("Печать смарт-инвойса"), backgroundColor: Colors.transparent),body: Center(child: Padding(padding: const EdgeInsets.all(20.0),child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [const Text("УНИВЕРСАЛЬНЫЙ QR-ИНВОЙС ДЛЯ ВИЗИТКИ", style: TextStyle(fontWeight: FontWeight.bold)),const SizedBox(height: 20),Container(width: 200, height: 200, color: Colors.white,child: GridView.builder(itemCount: 64, gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),itemBuilder: (context, index) => Container(margin: const EdgeInsets.all(1), color: (index % 3 == 0 || index % 5 == 0) ? Colors.black : Colors.white),),),const SizedBox(height: 20),const Text("Используйте для наклеек на транспорт, прямых донатов, чаевых и распечатки бумажных визиток. 100% защита эскроу-протокола.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),const Spacer(),ElevatedButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Векторный PDF отправлен на печать..."))), child: const Text("ОТПРАВИТЬ НА ПЕЧАТЬ")),const SizedBox(height: 10),],),),),);}}// ==========================================// КОНЕЦ ФАЙЛА: main.dart// ==========================================
+        String.prototype.padLeft = function(length, character) {
+            return this.length >= length ? this : (character.repeat(length) + this).slice(-length);
+};function changeTree(dir) {activeTreeIndex = (activeTreeIndex + dir + trees.length) % trees.length;updateTreeUI();}function updateTreeUI() {let t = trees[activeTreeIndex];document.getElementById('tree-name').innerText = t.name;document.getElementById('tree-escrow').innerText = Баланс Эскроу: ${t.funds} USDT;let st = Стадия ${t.stage}: ;if (t.stage == 1) { t.icon = "🌱"; st += "Росток"; }if (t.stage == 2) { t.icon = "🌿"; st += "Молодой бонсай"; }if (t.stage == 3) { t.icon = "🌸"; st += "Цветущее дерево"; }if (t.stage >= 4) { t.icon = "👑"; st += "Золотой финал (NFT минт)"; }document.getElementById('tree-icon').innerText = t.icon;document.getElementById('tree-stage-text').innerText = st;}function toggleBlur(show) {document.getElementById('blur-overlay').style.display = show ? 'flex' : 'none';}function mockAuth(prov) {document.getElementById('auth-status').innerText = Статус входа: Авторизован через [ ${prov} ] (Контакты защищены);alert(Успешный вход через ${prov});}function processTransfer(type, isFamily) {if (isFamily) {alert(Успешно: Бесплатный безлимитный перевод в эскроу для [ Семья / Друзья ]);} else {if (strangerTransfersCount < 3) {strangerTransfersCount++;document.getElementById('stranger-count').innerText = strangerTransfersCount;alert(Инвойс сгенерирован (Учтен сбор 1%). Незнакомцу отправлено. Использовано лимитов: ${strangerTransfersCount}/3);} else {alert(❌ Ограничение: Незнакомым адресам можно отправлять максимум 3 раза в сутки!);}}}function triggerRefund() {let t = trees[activeTreeIndex];if (t.stage >= 4) {alert("Ошибка: Смарт-контракт закрыт, NFT уже отправлен в сеть TON.");return;}let refund = t.funds;if (t.cat === "multistep") {refund = (t.funds - (t.funds * 0.1)) * (1 - (t.stage / 3));alert(Контракт расторгнут. 10% залога ушло тату-мастеру, вам возвращено ${refund} USDT.);} else {alert(Контракт расторгнут под 0% комиссии. Вся сумма ${refund} USDT вернулась на ваш кошелек.);}t.funds = 0;t.stage = 1;updateTreeUI();}function triggerAdminMask() {adminClicks++;if (adminClicks >= 3) {let m = prompt("Введите пароль маски (1 - Помощник, 2 - Создатель):");let ind = document.getElementById('mask-indicator');if (m === "1") {ind.style.display = "block"; ind.innerText = "🔵 АКТИВИРОВАНА МАСКА: ПОМОЩНИК";document.getElementById('creator-section').style.display = "none";} else if (m === "2") {ind.style.display = "block"; ind.innerText = "🔴 АКТИВИРОВАНА МАСКА: СОЗДАТЕЛЬ (ПЛАН Ф)";document.getElementById('creator-section').style.display = "block";}adminClicks = 0;}}function triggerSwipeLeft() {let card = document.getElementById('bonsai-card');card.style.transform = "translateX(-150%)";setTimeout(() => {alert(🚀 Дерево "${trees[activeTreeIndex].name}" успешно заброшено и отправлено свайпом!);card.style.transform = "translateX(0)";trees[activeTreeIndex].stage = 1;updateTreeUI();}, 300);}function triggerNfc() {alert("📟 Волны NFC запущены. Электронный ордер проверен, замок IoT Smart-Lock шелтера открыт.");}function triggerSos() {isSosMode = true;detoxTime += 7200;document.getElementById('tree-icon').innerText = "📡";alert("🚨 РЕЖИМ ЧП: Начислено +2 часа времени к таймеру, запущен бесплатный трекер Хлебных Крошек (Pulse Alert) для поиска ребенка/кошки!");}function openCharity() {alert("🕊️ Вы перешли в Древо Благотворительности. Все донаты отправляются напрямую фондам без сборов (0% комиссии).");}function printQR() {alert("🖨️ Векторный QR-код сгенерирован и отправлен в AirPrint/PDF для визиток или оплаты детского транспорта.");}function toggleInheritance() {let chk = document.getElementById('inherit-check').checked;if (chk) {let dest = confirm("Отправить активы Близким после отсутствия активности? (Нажмите Отмена, чтобы выбрать Фонд)");alert("Система наследования (Dead Man's Switch) активирована для: " + (dest ? "Близкие родственники" : "Благотворительный фонд"));}}function triggerAudioVerification() {let voiceAttempts = 5;let phrase = prompt(🎙️ Голосовой ввод кода из головы (Осталось попыток: ${voiceAttempts}):\n[Произнесите кодовое слово]);if (phrase) {alert("🎙️ Ошибка голоса. Система заставляет ввести текст вручную.");let txt = prompt("💡 Подсказка из скинов разблокирована!\nВведите секретный код текстом вручную:");if (txt) {trees[activeTreeIndex].stage++;updateTreeUI();alert("🌸 Код подошел! Дерево полито и перешло на стадию +1.");}}}
