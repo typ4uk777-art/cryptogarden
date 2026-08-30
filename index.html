@@ -1,155 +1,273 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Core Monolith v3.6</title>
-    <style>
-        :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
-            --accent: #10b981;
-            --accent-hover: #059669;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --blur-val: 8px;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg-main); color: var(--text); padding: 20px; min-height: 100vh; }
-        
-        /* Layout */
-        .dashboard { display: grid; grid-template-columns: 300px 1fr 350px; gap: 20px; max-width: 1600px; margin: 0 auto; }
-        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 15px 20px; border-radius: 12px; border: 1px solid #334155; }
-        .panel { background: var(--bg-card); border-radius: 12px; padding: 20px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* UI Elements */
-        h2 { font-size: 1.2rem; border-bottom: 2px solid #334155; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        button { background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 6px; transition: 0.2s; font-size: 0.9rem; }
-        button:hover { background: var(--accent-hover); }
-        button.btn-danger { background: var(--danger); }
-        button.btn-danger:hover { background: #dc2626; }
-        button.btn-secondary { background: #475569; }
-        button.btn-secondary:hover { background: #334155; }
-        
-        /* Timer & Balance */
-        .timer-display { font-size: 2rem; font-weight: bold; text-align: center; font-family: monospace; color: #38bdf8; }
-        .balance-container { background: #111827; padding: 15px; border-radius: 8px; text-align: center; position: relative; overflow: hidden; }
-        .balance-amount { font-size: 1.8rem; font-weight: bold; color: #fbbf24; transition: filter 0.2s; }
-        .balance-amount.blurred { filter: blur(var(--blur-val)); }
-        
-        /* Trees Module (Canvas/SVG Placeholder context) */
-        .tree-viewport { background: #0b0f19; border-radius: 8px; height: 400px; position: relative; border: 1px dashed #475569; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .tree-node { position: absolute; background: #334155; padding: 8px 12px; border-radius: 20px; border: 2px solid var(--accent); font-size: 0.85rem; text-align: center; min-width: 100px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
-        .tree-skin-neon .tree-node { border-color: #f43f5e; box-shadow: 0 0 10px #f43f5e; }
-        .tree-skin-gold .tree-node { border-color: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+dart// ==========================================
+// НАЧАЛО ФАЙЛА: main.dart
+// ПРОЕКТ: КРИПТОСАД (THE ECOSYSTEM HUB) v3.0
+// ==========================================
 
-        /* Multi-step processing */
-        .step-indicator { display: flex; justify-content: space-between; margin-top: 10px; position: relative; }
-        .step-dot { width: 24px; height: 24px; background: #475569; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 2; }
-        .step-dot.active { background: var(--accent); color: white; box-shadow: 0 0 8px var(--accent); }
-        .step-indicator::before { content: ''; position: absolute; top: 11px; left: 0; width: 100%; height: 2px; background: #475569; z-index: 1; }
+import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
-        /* Progress Bar */
-        .progress-bar-bg { background: #111827; height: 12px; border-radius: 6px; overflow: hidden; width: 100%; }
-        .progress-bar-fill { background: #ec4899; height: 100%; width: 45%; transition: width 0.4s ease; }
+void main() {
+  runApp(const CryptoGardenApp());
+}
 
-        /* Modals System */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.2s; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-content { background: var(--bg-card); padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid #475569; display: flex; flex-direction: column; gap: 15px; }
-        .modal-nested { z-index: 101; }
+/// Главная точка входа в приложение CryptoGarden.
+/// Содержит глобальную тему в стиле казуального детокс-неона.
+class CryptoGardenApp extends StatelessWidget {
+  const CryptoGardenApp({Key? key}) : super(key: key);
 
-        /* Lists & Tables */
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #111827; border-radius: 6px; font-size: 0.9rem; }
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Криптосад',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        fontFamily: 'Roboto',
+      ),
+      // Обертываем все приложение в Брандмауэр защиты от ПК
+      home: const AntiDesktopFirewall(
+        child: EcosystemHubScreen(),
+      ),
+    );
+  }
+}
 
-        /* Killswitch Trigger State */
-        body.killed { filter: grayscale(1) contrast(0.5); pointer-events: none !important; }
-        body.killed .kill-banner { display: block !important; }
-        .kill-banner { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--danger); padding: 30px; border-radius: 12px; font-size: 2rem; font-weight: bold; z-index: 9999; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9); color: white;}
+// ============================================================================
+// 1. ЯДРО БЕЗОПАСНОСТИ, ОГРАНИЧЕНИЙ И ЭФЕМЕРНОЙ ПАМЯТИ (AUTO-DELETE VAULT)
+// ============================================================================
 
-        /* Print styles optimization */
-        @media print {
-            body * { display: none !important; }
-            #print-section, #print-section * { display: block !important; background: white !important; color: black !important; }
-            #print-section { position: absolute; top: 0; left: 0; width: 100%; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 10px; text-align: left; }
-        }
-    </style>
-</head>
-<body>
+enum TreeCategory { charity, influencer, couple, multiStepPrivate, familyNeed, timeCapsule10Years }
+enum AdminMask { user, companion, creator }
+enum InheritanceTarget { familyMember, charityFund }
 
-    <div class="kill-banner">🚨 SYSTEM HALTED BY KILLSWITCH 🚨</div>
+/// Эфемерное хранилище данных сессии. 
+/// Все данные уничтожаются, как только приложение полностью закрывается.
+class EphemeralVault with WidgetsBindingObserver {
+  static final EphemeralVault _instance = EphemeralVault._internal();
+  factory EphemeralVault() => _instance;
 
-    <div class="dashboard">
-        <!-- HEADER PANEL -->
-        <header>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <h1 style="font-size: 1.4rem;">StreamCore <span style="color: var(--accent)">v3.6</span></h1>
-                <select id="streamer-select" style="background: #111827; color: white; padding: 5px; border-radius: 4px; border: 1px solid #475569;">
-                    <option value="streamer1">Стример: Иван (Главный)</option>
-                    <option value="streamer2">Стример: Елена (Кастомный Скин)</option>
-                    <option value="streamer3">Стример: Алекс (Благотворительность)</option>
-                </select>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="toggleBalanceBlur()">👁️ Блюр Баланса</button>
-                <button onclick="openModal('main-modal')">⚙️ Управление</button>
-                <button class="btn-danger" onclick="triggerKillswitch()">☠️ KILLSWITCH</button>
-            </div>
-        </header>
+  EphemeralVault._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
-        <!-- LEFT PANEL: CONTROLS & TRANS ACTIONS -->
-        <div class="panel">
-            <h2>⏱️ Высокоточный Таймер</h2>
-            <div class="timer-display" id="timer-clock">05:00:00</div>
-            <div style="display: flex; gap: 8px; justify-content: center;">
-                <button onclick="startTimer()">Старт</button>
-                <button class="btn-secondary" onclick="pauseTimer()">Пауза</button>
-                <button class="btn-danger" style="padding: 8px 10px;" onclick="resetTimer()">🔄</button>
-            </div>
+  // Списки контактов (заполняются строго вручную, без синхронизации телефонной книги)
+  final List<String> familyList = ["Мама Кошелек", "Брат Кошелек"]; 
+  final List<String> friendsList = ["Друг Крпитофан", "Сосед ИТ"];
 
-            <h2>💵 Поэтапная Транзакция</h2>
-            <div class="balance-container">
-                <div style="font-size: 0.8rem; color: var(--text-muted)">Личный баланс (Защищен блюром)</div>
-                <div class="balance-amount" id="balance-value">$12,450.00</div>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-size: 0.85rem;">Сумма и Валюта перевода:</label>
-                <div style="display: flex; gap: 5px;">
-                    <input type="number" id="tx-amount" value="100" style="width: 70px; background: #111827; border: 1px solid #475569; color: white; padding: 5px; border-radius: 4px;">
-                    <select id="tx-currency" style="flex: 1; background: #111827; border: 1px solid #475569; color: white; padding: 5px; border-radius: 4px;">
-                        <option value="USD">USD ($) ➡️ RUB</option>
-                        <option value="EUR">EUR (€) ➡️ RUB</option>
-                        <option value="POINT">POINTS ➡️ USD</option>
-                    </select>
-                </div>
-                <button onclick="processTransactionStage()">Запустить этап операции</button>
-            </div>
-            
-            <div>
-                <div style="font-size: 0.8rem; margin-bottom: 4px;" id="step-status">Текущий статус: Ожидание</div>
-                <div class="step-indicator">
-                    <div class="step-dot active" id="step1">1</div>
-                    <div class="step-dot" id="step2">2</div>
-                    <div class="step-dot" id="step3">3</div>
-                </div>
-            </div>
-        </div>
+  // Ограничитель переводов для Незнакомцев (Макс 3 уникальных адреса в сутки)
+  final Set<String> dailyStrangersTransfers = {};
+  final int maxStrangersPerDay = 3;
 
-        <!-- CENTER PANEL: TREES VIEWPORT -->
-        <div class="panel" style="gap: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>🌳 Семейные и Кастомные Деревья</h2>
-                <select id="skin-select" onchange="changeTreeSkin(this.value)" style="background: #111827; color: white; padding: 4px; border-radius: 4px; font-size: 0.8rem;">
-                    <option value="default">Скин: Классика</option>
-                    <option value="neon">Скин: Киберпанк (Неон)</option>
-                    <option value="gold">Скин: VIP Золото</option>
-                </select>
-            </div>
-            
-            <!-- Сами деревья четкие, на них блюр не распространяется -->
-            <div class="tree-viewport" id="tree-container">
-Родитель (Корень)Ветка АльфаВетка БетаДочерний Узел🧬 Детская Миграция DOM🖨️ Печать Донатов💝 Фонд БлаготворительностиСобрано на добрые дела:$4,520 / $10,000+50$ Чаевые+200$ Макси🏆 Рейтинг Кастомных Деревьев1. Дерево Иваныча (VIP)9,800 XP2. CyberTree_X7,450 XP3. Миграционное дерево4,210 XPУправление Системой (Уровень 1)Здесь настраивается вложенная иерархия интерфейсов и пресеты донатов.🔑 Открыть расширенные пресеты чаевых (Уровень 2)ЗакрытьКастомные Настройки & Чаевые (Уровень 2)Вложенная модалка отработала корректно без блокировки z-index.10)50)100)Назад на Уровень 1Предпросмотр Бланка ПечатиОТЧЕТ ПО ДОНАТАМ СТРИМАID ТранзакцииВалюта СтейджаСуммаСтатус#TX-9081USD -> RUB\$150.00Зачислено#TX-9082EUR -> RUB€80.00В обработке#TX-9083POINTS1,200 ptsЗачислено в Дерево🖨️ Отправить на принтерОтмена// High-Precision Mobile-Safe Timer Logic (Poco X3 Anti-Sleep Fix)let timerInterval = null;let timeRemaining = 5 * 60 * 60; // 5 hours in secondslet lastTickTime = Date.now();function updateTimerDisplay() {const hrs = String(Math.floor(timeRemaining / 3600)).padStart(2, '0');const mins = String(Math.floor((timeRemaining % 3600) / 60)).padStart(2, '0');const secs = String(timeRemaining % 60).padStart(2, '0');document.getElementById('timer-clock').innerText = ${hrs}:${mins}:${secs};}function startTimer() {if (timerInterval) return;lastTickTime = Date.now();timerInterval = setInterval(() => {const now = Date.now();const delta = Math.floor((now - lastTickTime) / 1000);if (delta >= 1) {timeRemaining = Math.max(0, timeRemaining - delta);lastTickTime = now;updateTimerDisplay();}if (timeRemaining === 0) clearInterval(timerInterval);}, 1000);}function pauseTimer() {clearInterval(timerInterval);timerInterval = null;}function resetTimer() {pauseTimer();timeRemaining = 5 * 60 * 60;updateTimerDisplay();}// Isolated Balance Blur Controllerfunction toggleBalanceBlur() {const balanceEl = document.getElementById('balance-value');balanceEl.classList.toggle('blurred');}// Tree Skin Selector (Custom Trees Visuals)function changeTreeSkin(skin) {const container = document.getElementById('tree-container');container.className = 'tree-viewport'; // Resetif (skin !== 'default') {container.classList.add(tree-skin-${skin});}}// Child Migration Logic (Dynamic DOM Manipulation)function executeChildMigration() {const container = document.getElementById('tree-container');const nodes = container.getElementsByClassName('tree-node');if (nodes.length > 3) {const targetChild = nodes; // "Дочерний Узел"targetChild.style.transition = "all 0.5s ease";targetChild.style.left = "40px"; // Меняем ветку-родителя на АльфаtargetChild.style.top = "230px";targetChild.style.borderColor = "#a855f7";targetChild.innerText = "🧬 Мигрировавший Узел";// Динамическое обновление рейтинга при миграцииconst ranking = document.getElementById('ranking-list');ranking.innerHTML = <div class="list-item"><span>1. Дерево Иваныча (VIP)</span><strong style="color: #fbbf24;">9,800 XP</strong></div> <div class="list-item"><span>2. Миграционное дерево (+1)</span><strong style="color: #a855f7;">8,900 XP</strong></div> <div class="list-item"><span>3. CyberTree_X</span><strong style="color: #cbd5e1;">7,450 XP</strong></div>;alert('Детская миграция успешно проведена в DOM-дереве!');}}// Multi-Step Currency Processing Logic (3 Stages)let currentStage = 1;function processTransactionStage() {const statusEl = document.getElementById('step-status');const amount = document.getElementById('tx-amount').value;const currency = document.getElementById('tx-currency').value;document.querySelectorAll('.step-dot').forEach(el => el.classList.remove('active'));if (currentStage === 1) {statusEl.innerText = Этап 1: Прием валюты и верификация транзакции в ${currency}...;document.getElementById('step1').classList.add('active');currentStage = 2;} else if (currentStage === 2) {statusEl.innerText = Этап 2: Конвертация шлюзом внутренней матрицы курса...;document.getElementById('step2').classList.add('active');currentStage = 3;} else if (currentStage === 3) {statusEl.innerText = Этап 3: Зачисление средств на баланс и отчисление в фонд!;document.getElementById('step3').classList.add('active');// Обновляем балансconst balanceEl = document.getElementById('balance-value');const cleanBal = parseFloat(balanceEl.innerText.replace(/[^0-9.-]+/g,""));balanceEl.innerText = $${(cleanBal + parseFloat(amount)).toLocaleString('en-US', {minimumFractionDigits: 2})};currentStage = 1; // Reset loop}}// Charity Module Counterlet charitySaved = 4520;function addCharity(value) {charitySaved = Math.min(10000, charitySaved + value);document.getElementById('charity-total').innerText = $${charitySaved} / $10,000;const percent = (charitySaved / 10000) * 100;document.getElementById('charity-progress').style.width = ${percent}%;if (charitySaved >= 10000) {alert('🎉 Фонд благотворительности собран на 100%! Анимация деревьев активирована!');}}// Modular Window Handler (Modals inside Modals)function openModal(id) {document.getElementById(id).classList.add('active');}function closeModal(id) {document.getElementById(id).classList.remove('active');}// Heavy Iron-Clad Killswitch Logicfunction triggerKillswitch() {document.body.classList.add('killed');pauseTimer();// Отвязываем глобальные лисенеры, чтобы намертво запереть логикуwindow.onclick = null;document.querySelectorAll('button').forEach(btn => btn.disabled = true);console.error('⚠️ CRITICAL: SYSTEM LOCKED DOWN VIA INTENDED KILLSWITCH PROMPT.');}
+  // Оперативная память жестов и сессии
+  List<Offset> gesturePoints = [];
+  bool isAuthViaSteam = false;
+  bool isAuthViaTelegram = false;
+
+  /// Тотальная зачистка оперативной памяти
+  void purgeAllData() {
+    gesturePoints.clear();
+    dailyStrangersTransfers.clear();
+    isAuthViaSteam = false;
+    isAuthViaTelegram = false;
+    debugPrint("🚨 [КРИПТОСАД] Сессия закрыта. Данные стерты из RAM.");
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Если приложение уходит из памяти или закрывается — зануляем всё
+    if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) {
+      purgeAllData();
+    }
+  }
+
+  /// Валидация лимитов на отправку средств
+  bool verifyAndRegisterTransfer(String address, bool isFamilyOrFriend) {
+    if (isFamilyOrFriend) return true; // Семье и друзьям — полный безлимит
+    if (dailyStrangersTransfers.contains(address)) return true; // Повторный перевод тому же незнакомцу разрешен
+    if (dailyStrangersTransfers.length < maxStrangersPerDay) {
+      dailyStrangersTransfers.add(address);
+      return true;
+    }
+    return false; // Превышен лимит 3-х незнакомцев
+  }
+}
+
+// ============================================================================
+// 2. БРАНДМАУЭР ПК-БЛЭКАУТА (ANTI-DESKTOP FIREWALL)
+// ============================================================================
+
+class AntiDesktopFirewall extends StatelessWidget {
+  final Widget child;
+  const AntiDesktopFirewall({Key? key, required this.child}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Жесткая проверка платформы. Допускаются только мобильные тач-устройства.
+    if (kIsWeb || 
+        Theme.of(context).platform == TargetPlatform.windows || 
+        Theme.of(context).platform == TargetPlatform.macOS || 
+        Theme.of(context).platform == TargetPlatform.linux) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.gpp_bad_outlined, color: Color(0xFFFF0055), size: 90),
+                SizedBox(height: 24),
+                Text(
+                  "⚠️ СИСТЕМНЫЙ БЛЭКАУТ",
+                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 3),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "Вход с персональных компьютеров заблокирован.\nТребуется прямое физическое взаимодействие пальца с сенсором мобильного устройства.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 16, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return child;
+  }
+}
+
+// ============================================================================
+// 3. МОДЕЛЬ ДЕРЕВА И ЛОГИКА ЭСКРОУ И МУТАЦИЙ (CRYPTO TREE CONTRACT)
+// ============================================================================
+
+class CryptoTreeContract {
+  final String id;
+  String name;
+  final TreeCategory category;
+  int currentStage; // 1 - Росток, 2 - Молодой, 3 - Цветущий, 4 - Финал (Web3 NFT минт)
+  double balanceLocked;
+  bool isBanned; 
+  
+  // Дополнительные параметры
+  bool isInheritanceEnabled; 
+  InheritanceTarget? inheritanceTarget;
+  final DateTime? capsuleReleaseDate; 
+
+  CryptoTreeContract({
+    required this.id,
+    required this.name,
+    required this.category,
+    this.currentStage = 1,
+    required this.balanceLocked,
+    this.isBanned = false,
+    this.isInheritanceEnabled = false,
+    this.inheritanceTarget,
+    this.capsuleReleaseDate,
+  });
+
+  /// Если скин забанен, дерево визуально и технически становится Серым Деревом
+  bool get isGreyState => isBanned;
+
+  void forceToGreyContract() {
+    isBanned = true;
+    name = "🔒 Серое Дерево (Активы законсервированы в Эскроу)";
+  }
+
+  /// Логика безопасного возврата средств на каждом этапе до 4-й стадии
+  double calculateRefundAmount() {
+    if (currentStage >= 4) return 0.0; // Смарт-контракт закрыт, ушел в блокчейн
+    
+    if (category == TreeCategory.multiStepPrivate) {
+      // 10% невозвратно сразу идет исполнителю (например, запуск работы тату-мастера)
+      double nonRefundableDeposit = balanceLocked * 0.10;
+      double restFunds = balanceLocked - nonRefundableDeposit;
+      // Остаток возвращается пропорционально текущему шагу
+      return restFunds * (1.0 - (currentStage / 3.0));
+    }
+    
+    // Для стандартных, семейных и долгосрочных контрактов до 4 этапа возвращается 100% средств
+    return balanceLocked;
+  }
+}
+
+// ============================================================================
+// 📱 ЭКРАН 1: ГЛОБАЛЬНЫЙ ГЛАВНЫЙ ЭКРАН (THE ECOSYSTEM HUB)
+// ============================================================================
+
+class EcosystemHubScreen extends StatefulWidget {
+  const EcosystemHubScreen({Key? key}) : super(key: key);
+
+  @override
+  State<EcosystemHubScreen> createState() => _EcosystemHubScreenState();
+}
+
+class _EcosystemHubScreenState extends State<EcosystemHubScreen> {
+  final EphemeralVault _vault = EphemeralVault();
+  
+  // Переключатели интерфейса
+  bool _isCamouflageBlurred = false;
+  AdminMask _currentMask = AdminMask.user;
+  int _detoxSecondsLeft = 7200; // 02:00:00 цифровой детокс таймер
+  bool _isDetoxBlockActive = false;
+  bool _isSosRadarActive = false;
+
+  // Исходный список демонстрационных деревьев в карусели
+  late List<CryptoTreeContract> _myTrees;
+  int _activeTreeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDemoTrees();
+    _startDetoxCountdown();
+  }
+
+  void _initDemoTrees() {
+    _myTrees = [
+      CryptoTreeContract(id: "1", name: "Классический Бонсай Элит", category: TreeCategory.influencer, balanceLocked: 150.0),
+      CryptoTreeContract(id: "2", name: "Семейный Фонд на Отпуск", category: TreeCategory.familyNeed, balanceLocked: 500.0),
+      CryptoTreeContract(id: "3", name: "Мой Мультишаг: Сделать Тату", category: TreeCategory.multiStepPrivate, balanceLocked: 300.0),
+      CryptoTreeContract(id: "4", name: "Капсула времени: Сын-2036", category: TreeCategory.timeCapsule10Years, balanceLocked: 1000.0, capsuleReleaseDate: DateTime(2036, 1, 1)),
+    ];
+  }
+
+  void _startDetoxCountdown() async {
+    // Симуляция фонового тиканья автономного брандмауэра детокса
+    while (mounted && _detoxSecondsLeft > 0) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted && !_isSosRadarActive) {
+        setState(() {
+          _detoxSecondsLeft--;
+          if (_detoxSecondsLeft <= 0) {
+            _isDetoxBlockActive = true;
+          }
+        });
+      }
+    }
+  }
+
+  String _formatTimer(int totalSeconds) {
+    int hrs = totalSeconds ~/ 3600;
+    int mins = (totalSeconds % 3600) ~/ 60;
+    int secs = totalSeconds % 60;
+    return "${hrs.toString().padLeft(2, '0')}:${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Если брандмауэр детокса дошел до нуля - блокируем экран и отправляем к близким
+    if (_isDetoxBlockActive) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.hourglass_disabled, color: Colors.orange, size: 80),
+              const SizedBox(height: 24),
+              const Text("⌛ ДЕТОКС-БЛОКИРОВКА", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 12),
+const Text("Время сессии вышло.\nВозвращайся в реальный мир к кошке и близким.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),const SizedBox(height: 30),ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF0055)),onPressed: () {setState(() {_detoxSecondsLeft = 60; // Демонстрационный сброс_isDetoxBlockActive = false;});},child: const Text("Сбросить демо-таймер"),)],),),);}CryptoTreeContract currentTree = _myTrees[_activeTreeIndex];return Scaffold(body: SafeArea(child: Stack(children: [// ОСНОВНОЙ СЛОЙ ХАБАPadding(padding: const EdgeInsets.all(16.0),child: Column(children: [_buildHeaderUpperPoints(),const SizedBox(height: 10),_buildAdminIndicator(),const Spacer(),_buildBonsaiCentralCarousel(currentTree),const Spacer(),_buildInheritanceAndRefundControls(currentTree),_buildSocialActionButtons(),const SizedBox(height: 10),_buildBottomControlBar(),],),),// ЭФФЕКТ МАТОВОГО КАМУФЛЯЖНОГО БЛЮРА ДЛЯ МЕТРОif (_isCamouflageBlurred)Positioned.fill(child: GestureDetector(onTap: () => setState(() => _isCamouflageBlurred = false),child: Container(color: Colors.black.withOpacity(0.95),child: const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [Icon(Icons.lens_blur, color: Color(0xff00ffff), size: 70),SizedBox(height: 16),Text("🔒 КАМУФЛЯЖ АКТИВЕН", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2)),SizedBox(height: 8),Text("Защита от подглядывающих глаз в метро.\nНажмите в любом месте для отмены.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),],),),),),),],),),);}// ВЕРХНЯЯ ПАНЕЛЬ И НЕВИДИМЫЙ ТРИГГЕРWidget _buildHeaderUpperPoints() {return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [// Глобальный счетчик платформыconst Text("🌱 Всего выращено: 1,430",style: TextStyle(color: Color(0xff00ffcc), fontSize: 15, fontWeight: FontWeight.bold),),// Брандмауэр Цифрового ДетоксаText("⌛ ${_formatTimer(_detoxSecondsLeft)}",style: TextStyle(color: _isSosRadarActive ? const Color(0xFFFF0055) : const Color(0xFFFF6B00), fontSize: 15, fontWeight: FontWeight.bold),),// Скрытая пиксель-зона Невидимого Триггера Создателя (Верхний правый угол)GestureDetector(onLongPress: _activateAdminSwitch,child: Container(width: 30,height: 30,color: Colors.transparent, // Невидима для обычных пользователей),)],);}Widget _buildAdminIndicator() {if (_currentMask == AdminMask.user) return const SizedBox.shrink();String label = _currentMask == AdminMask.companion ? "🔵 РЕЖИМ ПОМОЩНИКА" : "🔴 РЕЖИМ СОЗДАТЕЛЯ (ПЛАН Ф)";Color color = _currentMask == AdminMask.companion ? Colors.blue : const Color(0xFFFF0055);return Container(padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),);}// ЦЕНТРАЛЬНАЯ СЦЕНА ЭВОЛЮЦИИ БОНСАЙWidget _buildBonsaiCentralCarousel(CryptoTreeContract tree) {String stageText = "Стадия ${tree.currentStage}: ";if (tree.currentStage == 1) stageText += "Росток 🌱";if (tree.currentStage == 2) stageText += "Молодой бонсай 🌿";if (tree.currentStage == 3) stageText += "Цветущее дерево 🌸";if (tree.currentStage == 4) stageText += "Золотой финал 💎 (NFT)";return Container(width: double.infinite,padding: const EdgeInsets.all(16),decoration: BoxDecoration(color: Colors.grey.shade900.withOpacity(0.5),borderRadius: BorderRadius.circular(16),border: Border.all(color: tree.isGreyState ? Colors.grey : const Color(0xff00ffff).withOpacity(0.3)),),child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [IconButton(icon: const Icon(Icons.arrow_back_ios, size: 16),onPressed: () {setState(() {_activeTreeIndex = (_activeTreeIndex - 1) % _myTrees.length;});},),Expanded(child: Text(tree.name,textAlign: TextAlign.center,style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tree.isGreyState ? Colors.grey : Colors.white),),),IconButton(icon: const Icon(Icons.arrow_forward_ios, size: 16),onPressed: () {setState(() {_activeTreeIndex = (_activeTreeIndex + 1) % _myTrees.length;});},),],),const SizedBox(height: 20),// Визуальное представление дерева / радараContainer(height: 120,width: 120,decoration: BoxDecoration(shape: BoxShape.circle,color: tree.isGreyState ? Colors.grey.shade800 : const Color(0xff00ffff).withOpacity(0.05),border: Border.all(color: tree.isGreyState ? Colors.grey : const Color(0xff00ffff), width: _isSosRadarActive ? 3 : 1),),child: Center(child: _isSosRadarActive? const Icon(Icons.radar, color: Color(0xFFFF0055), size: 50): Text(tree.isGreyState ? "🔘" : (tree.currentStage == 1 ? "🌱" : tree.currentStage == 2 ? "🌿" : tree.currentStage == 3 ? "🌸" : "👑"),style: const TextStyle(fontSize: 48),),),),const SizedBox(height: 16),Text(stageText, style: const TextStyle(fontWeight: FontWeight.bold)),const SizedBox(height: 4),Text("Заморожено в Эскроу: ${tree.balanceLocked} USDT", style: const TextStyle(color: Colors.grey, fontSize: 13)),if (tree.category == TreeCategory.timeCapsule10Years)const Padding(padding: EdgeInsets.top(6.0),child: Text("🔒 Капсула времени: Заблокировано до 2036 года", style: TextStyle(color: Colors.amber, fontSize: 11)),)],),);}// ПАНЕЛЬ НАСЛЕДСТВА И ВОЗВРАТА СРЕДСТВWidget _buildInheritanceAndRefundControls(CryptoTreeContract tree) {return Column(children: [// Чекбокс ручной настройки наследстваRow(mainAxisAlignment: MainAxisAlignment.center,children: [Checkbox(value: tree.isInheritanceEnabled,activeColor: const Color(0xff00ffcc),onChanged: (bool? value) {setState(() {tree.isInheritanceEnabled = value ?? false;if (tree.isInheritanceEnabled) {_showInheritanceTargetDialog(tree);}});},),const Text("Включить систему наследства", style: TextStyle(fontSize: 13)),],),// Кнопка Эскроу-Возврата средств (Доступна до 4-й стадии)if (tree.currentStage < 4)TextButton.icon(icon: const Icon(Icons.undo, color: Colors.amber, size: 16),label: Text("Отозвать контракт и вернуть средства (${tree.calculateRefundAmount()} USDT)", style: const TextStyle(color: Colors.amber, fontSize: 12)),onPressed: () {double refund = tree.calculateRefundAmount();ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("💰 Контракт отозван. На ваш адрес возвращено $refund USDT (Комиссия 0%)"),backgroundColor: Colors.green.shade800,));setState(() {tree.balanceLocked = 0;tree.currentStage = 1;});},),const SizedBox(height: 10),],);}// СОЦИАЛЬНЫЕ КНОПКИ И ОГРАНИЧЕНИЯ (СЕМЬЯ / ДРУЗЬЯ / НЕЗНАКОМЦЫ)Widget _buildSocialActionButtons() {return Column(children: [Row(children: [Expanded(child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.purple.shade900, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),icon: const Icon(Icons.people, color: Colors.white, size: 16),label: const Text("СЕМЬЯ / ДРУЗЬЯ (∞)", style: TextStyle(fontSize: 12, color: Colors.white)),onPressed: () => _processTransferScenario("Кошелек Из Списка", isFamilyOrFriend: true),),),const SizedBox(width: 8),Expanded(child: ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade900, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),icon: const Icon(Icons.person_search, color: Colors.white, size: 16),label: Text("НЕЗНАКОМЦЫ (${_vault.dailyStrangersTransfers.length}/3)", style: const TextStyle(fontSize: 12, color: Colors.white)),onPressed: () => _processTransferScenario("0xНовыйАдресНезнакомца${Random().nextInt(100)}", isFamilyOrFriend: false),),),],),// Специальная кнопка Макро-безопасности Создателя (План Ф)if (_currentMask == AdminMask.creator)Padding(padding: const EdgeInsets.only(top: 8.0),child: WidthButton(label: "🛰️ ПРЯМАЯ ИНТЕРВЕНЦИЯ БЮДЖЕТА",color: const Color(0xFFFF0055),onPressed: () {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("План Ф: Выделен моментальный грант Создателя на муниципальные нужды под 0%")));},),),],);}// НИЖНИЙ ТАББАР УПРАВЛЕНИЯ КНОПКАМИWidget _buildBottomControlBar() {return Row(mainAxisAlignment: MainAxisAlignment.spaceAround,children: [// Кнопка Блюра КамуфляжаIconButton(icon: const Icon(Icons.disabled_by_default_rounded, color: Colors.white54),tooltip: 'Проверить Блюр',onPressed: () => setState(() => _isCamouflageBlurred = true),),// Кнопка полива (Переход на холст жеста)IconButton(icon: const Icon(Icons.favorite, color: Color(0xff00ffff)),tooltip: 'Полить (Жест)',onPressed: () {Navigator.push(context,MaterialPageRoute(builder: (context) => GestureCanvasScreen(onSuccess: () {setState(() {if (_myTrees[_activeTreeIndex].currentStage < 4) {_myTrees[_activeTreeIndex].currentStage += 1;}});ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🌸 Жест распознан! Дерево эволюционировало (+1)")));},),),);},),// Кнопка Благотворительности (Мгновенный переход)IconButton(icon: const Icon(Icons.volunteer_activism, color: Colors.greenAccent),tooltip: 'Благотворительность',onPressed: () {_showCharityInvoiceDialog();},),// Кнопка Аудио/Текстовой дешифровки кодового словаIconButton(icon: const Icon(Icons.keyboard_voice, color: Colors.amber),tooltip: 'Аудио Дешифратор',onPressed: () {_showAudioVerificationDialog();},),// Экстренный СОС-РадарIconButton(icon: const Icon(Icons.crisis_alert, color: Color(0xFFFF0055)),tooltip: 'СОС Радар',onPressed: _triggerSosEmergencyRadar,),],);}// ВНУТРЕННЯЯ ЛОГИКА И ДИАЛОГОВЫЕ ОКНА ЭКРАНА ХАБАvoid _activateAdminSwitch() {showDialog(context: context,builder: (context) => AlertDialog(title: const Text("🎭 Админ-маска камуфляжа"),content: const Text("Выберите уровень прав доступа в экосистему Криптосада:"),actions: [TextButton(onPressed: () { setState(() => _currentMask = AdminMask.user); Navigator.pop(context); }, child: const Text("Обычный")),TextButton(onPressed: () { setState(() => _currentMask = AdminMask.companion); Navigator.pop(context); }, child: const Text("Помощник")),TextButton(onPressed: () { setState(() => _currentMask = AdminMask.creator); Navigator.pop(context); }, child: const Text("Создатель")),],),);}void _processTransferScenario(String targetAddress, {required bool isFamilyOrFriend}) {bool isAllowed = _vault.verifyAndRegisterTransfer(targetAddress, isFamilyOrFriend);if (isAllowed) {showDialog(context: context,builder: (context) => AlertDialog(title: const Text("🧾 Смарт-Инвойс Web3"),content: Column(mainAxisSize: MainAxisSize.min,crossAxisAlignment: CrossAxisAlignment.start,children: [Text("Адрес назначения:\n$targetAddress", style: const TextStyle(fontSize: 12, color: Colors.grey)),const SizedBox(height: 10),const Text("Включая инфраструктурный сбор платформы: 1% на входе (возвращается при отмене контракта)."),],),actions: [TextButton(onPressed: () {Navigator.pop(context);_showPrintInvoiceScreen();},child: const Text("РАСПЕЧАТАТЬ ДЛЯ ВИЗИТКИ / ТРАНСПОРТА")),TextButton(onPressed: () => Navigator.pop(context), child: const Text("ОК")),],),);} else {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Превышен лимит! Максимум 3 перевода незнакомцам в сутки."),backgroundColor: Color(0xFFFF0055),));}}void _showInheritanceTargetDialog(CryptoTreeContract tree) {showDialog(context: context,builder: (context) => AlertDialog(title: const Text("⚙️ Настройка Наследования"),content: const Text("Куда направить зашифрованные ключи и активы эскроу в случае отсутствия активности?"),actions: [TextButton(onPressed: () {tree.inheritanceTarget = InheritanceTarget.familyMember;Navigator.pop(context);ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Наследство привязано к членам Семьи")));},child: const Text("Близким (Семья)"),),TextButton(onPressed: () {tree.inheritanceTarget = InheritanceTarget.charityFund;Navigator.pop(context);ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Наследство привязано к Благотворительному фонду")));},child: const Text("На Благотворительность"),),],),);}void _triggerSosEmergencyRadar() {setState(() {_isSosRadarActive = true;_detoxSecondsLeft += 7200; // Начисляем +2 часа безусловного времени детокс-таймера});ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🚨 АКТИВИРОВАН РЕЖИМ ЧП: Лимиты детокса сняты, запущен 1-минутный импульсный трекер 'Хлебных крошек' для поиска кошки/ребенка."),backgroundColor: Color(0xFFFF0055),));}void _showCharityInvoiceDialog() {showDialog(context: context,builder: (context) => AlertDialog(title: const Text("🕊️ Древо Созидания (Благотворительность)"),content: const Text("Прямой перевод на верифицированный кошелек фонда.\nКомиссия платформы: 0%"),actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("Полить (Донат 0%)")),TextButton(onPressed: () => Navigator.pop(context), child: const Text("Официальный сайт")),TextButton(onPressed: () => Navigator.pop(context), child: const Text("Закрыть")),],),);}void _showPrintInvoiceScreen() {Navigator.push(context,MaterialPageRoute(builder: (context) => const PrintInvoiceScreen()),);}// ДВУХУРОВНЕВАЯ АУДИО/ТЕКСТОВАЯ ДЕШИФРОВКА КОДОВОГО СЛОВА С ЛИМИТАМИ СЕССИИvoid _showAudioVerificationDialog() {int voiceAttemptsLeft = 5;int textAttemptsLeft = 3;int consecutiveVoiceFailures = 0;bool isTextFieldForced = false;showModalBottomSheet(context: context,isScrollControlled: true,backgroundColor: Colors.grey.shade900,shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),builder: (context) {return StatefulBuilder(builder: (BuildContext context, StateSetter setModalState) {return Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom,left: 16, right: 16, top: 20),child: Column(mainAxisSize: MainAxisSize.min,children: [const Text("🔓 Дешифровка кода из головы пользователя", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),const SizedBox(height: 12),if (!isTextFieldForced) ...[Text("Голосовой ввод (Аудио попыток: $voiceAttemptsLeft)", style: const TextStyle(color: Colors.amber)),const SizedBox(height: 10),ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff00ffff).withOpacity(0.2)),icon: const Icon(Icons.mic, color: Color(0xff00ffff)),label: const Text("Произнести кодовое слово", style: TextStyle(color: Colors.white)),onPressed: () {// Эмуляция неверного голосового вводаsetModalState(() {voiceAttemptsLeft--;consecutiveVoiceFailures++;if (consecutiveVoiceFailures >= 2 || voiceAttemptsLeft <= 0) {isTextFieldForced = true; // Принудительное переключение на текст после 2-й ошибки}});},),] else ...[const Text("⚠️ Принудительный текстовый режим (2 ошибки голоса)", style: TextStyle(color: Colors.redAccent)),const SizedBox(height: 6),const Text("💡 Подсказка к скину: 'Слово спрятано на скине дерева Сакуры, провисите на нем 1 минуту'", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 12)),const SizedBox(height: 10),TextField(decoration: InputDecoration(border: const OutlineInputBorder(),hintText: "Введите слово руками (Попыток: $textAttemptsLeft)",),onSubmitted: (text) {setModalState(() {if (textAttemptsLeft > 1) {textAttemptsLeft--;} else {Navigator.pop(context);ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Критическая блокировка ввода! Сессия сброшена."), backgroundColor: Colors.red));}});},),],const SizedBox(height: 30),],),);},);},);}}// ============================================================================// 🎨 ЭКРАН 2: ПОЛНОЭКРАННЫЙ БИОМЕТРИЧЕСКИЙ ХОЛСТ (THE GESTURE LOCK)// ============================================================================class GestureCanvasScreen extends StatefulWidget {final VoidCallback onSuccess;const GestureCanvasScreen({Key? key, required this.onSuccess}) : super(key: key);@overrideState createState() => _GestureCanvasScreenState();}class _GestureCanvasScreenState extends State {final List _points = EphemeralVault().gesturePoints;@overrideWidget build(BuildContext context) {return Scaffold(backgroundColor: Colors.black,body: Stack(children: [// Интерактивное поле сенсорного холстаGestureDetector(onPanUpdate: (DragUpdateDetails details) {setState(() {RenderBox renderBox = context.findRenderObject() as RenderBox;_points.add(renderBox.globalToLocal(details.globalPosition));});},onPanEnd: (DragEndDetails details) {_processVectorValidation();},child: CustomPaint(painter: NeonGesturePainter(points: _points),size: Size.infinite,),),// Текстовая плашка сверхуconst Positioned(top: 50, left: 20, right: 20,child: Text("Нарисуйте пальцем Семейное Сердечко для полива и верификации",textAlign: TextAlign.center,style: TextStyle(color: Color(0xff00ffff), fontSize: 13, letterSpacing: 1),),),// Кнопка отмены внизу экранаPositioned(bottom: 40, left: 0, right: 0,child: Center(child: TextButton.icon(onPressed: () {setState(() => _points.clear());Navigator.pop(context);},icon: const Icon(Icons.close, color: Color(0xFFFF0055)),label: const Text("ОТМЕНА И ОЧИСТКА ХОЛСТА", style: TextStyle(color: Colors.white, letterSpacing: 1.5, fontSize: 12)),),),)],),);}/// Векторный математический движок с 25% допуском на фантомные нажатия тачскринаvoid _processVectorValidation() {if (_points.length < 8) return;double minX = _points.map((p) => p.dx).reduce(min);double maxX = _points.map((p) => p.dx).reduce(max);double minY = _points.map((p) => p.dy).reduce(min);double maxY = _points.map((p) => p.dy).reduce(max);double dX = maxX - minX;double dY = maxY - minY;if (dX < 40 || dY < 40) return; // Игнорируем мелкие случайные касанияOffset firstPoint = _points.first;Offset lastPoint = _points.last;// Вычисляем расстояние сходимости концов фигуры жестаdouble vectorDistance = sqrt(pow(firstPoint.dx - lastPoint.dx, 2) + pow(firstPoint.dy - lastPoint.dy, 2));// Расчет 25% погрешности геометрии сенсора экрана (например Poco X3)double allowedTolerance = max(dX, dY) * 0.25;if (vectorDistance <= allowedTolerance) {_points.clear();widget.onSuccess();Navigator.pop(context);} else {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Жест не верифицирован (25% допуск не пройден). Попробуйте еще раз."),backgroundColor: Color(0xFFFF0055),));setState(() {_points.clear();});}}}class NeonGesturePainter extends CustomPainter {final List points;NeonGesturePainter({required this.points});@overridevoid paint(Canvas canvas, Size size) {Paint paint = Paint()..color = const Color(0xff00ffff)..strokeCap = StrokeCap.round..strokeWidth = 6.0..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3); // Неоновое свечение рендерингаfor (int i = 0; i < points.length - 1; i++) {canvas.drawLine(points[i], points[i + 1], paint);}}@overridebool shouldRepaint(covariant CustomPainter oldDelegate) => true;}// ============================================================================// 💎 ЭКРАН 3: ГЕНЕРАЦИЯ И ПЕЧАТЬ ИНВОЙСОВ / QR ДЛЯ ВИЗИТОК И ТРАНСПОРТА// ============================================================================class PrintInvoiceScreen extends StatelessWidget {const PrintInvoiceScreen({Key? key}) : super(key: key);@overrideWidget build(BuildContext context) {return Scaffold(appBar: AppBar(title: const Text("Печать смарт-инвойса", style: TextStyle(fontSize: 16)),backgroundColor: Colors.transparent,elevation: 0,),body: Center(child: Padding(padding: const EdgeInsets.all(24.0),child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [const Text("УНИВЕРСАЛЬНЫЙ QR-ИНВОЙС ЭКОСИСТЕМЫ",textAlign: TextAlign.center,style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1),),const SizedBox(height: 24),// Симуляция векторного QR-кода для печати на визитках, чаевых или билетахContainer(width: 220,height: 220,decoration: BoxDecoration(color: Colors.white,borderRadius: BorderRadius.circular(12),),child: Padding(padding: const EdgeInsets.all(16.0),child: GridView.builder(itemCount: 64,gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),itemBuilder: (context, index) {return Container(margin: const EdgeInsets.all(1),color: (index % 3 == 0 || index % 7 == 0) ? Colors.black : Colors.white,);},),),),const SizedBox(height: 24),const Text("Используйте для размещения на бумажных визитках,\nдля приема прямых донатов, чаевых\nили оплаты детского транспорта.",textAlign: TextAlign.center,style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),),const Spacer(),WidthButton(label: "🖨️ ОТПРАВИТЬ В AirPrint / PDF",color: const Color(0xff00ffcc),textColor: Colors.black,onPressed: () {ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Векторный макет инвойса отправлен на печать...")));},),const SizedBox(height: 20),],),),),);}}// ============================================================================// ВСПУМОГАТЕЛЬНЫЕ UI-КОМПОНЕНТЫ// ============================================================================class WidthButton extends StatelessWidget {final String label;final Color color;final Color textColor;final VoidCallback onPressed;const WidthButton({Key? key,required this.label,required this.color,this.textColor = Colors.white,required this.onPressed,}) : super(key: key);@overrideWidget build(BuildContext context) {return SizedBox(width: double.infinity,height: 46,child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: color,shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),),onPressed: onPressed,child: Text(label,style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),),),);}}// ==========================================// КОНЕЦ ФАЙЛА: main.dart// ==========================================
